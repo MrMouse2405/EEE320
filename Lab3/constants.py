@@ -1,6 +1,13 @@
-# Restaurant data
+type NumberOfSeats = int
+type TableLocation = tuple[int, int]
+type Table = tuple[NumberOfSeats, TableLocation]
 
-TABLES = [
+type MenuItemName = str
+type Cost = int
+type MenuItem = tuple[MenuItemName, Cost]
+
+# Restaurant data
+TABLES: list[Table] = [
     (6, (20, 20)),
     (4, (20, 225)),
     (5, (20, 370)),
@@ -11,7 +18,7 @@ TABLES = [
     (2, (270, 520)),
 ]
 
-MENU_ITEMS = [
+MENU_ITEMS: list[MenuItem] = [
     ("House burger", 16),
     ("Chicken club", 14.5),
     ("Crispy Pork Belly", 14.5),
