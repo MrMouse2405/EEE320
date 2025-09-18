@@ -1,4 +1,11 @@
-from constants import TABLES, MENU_ITEMS
+from constants import (
+    TABLES,
+    MENU_ITEMS,
+    SeatNumber,
+    MenuItem,
+    NumberOfSeats,
+    TableLocation,
+)
 
 
 class Restaurant:
@@ -9,16 +16,16 @@ class Restaurant:
 
 
 class Table:
-    def __init__(self, seats, location):
+    def __init__(self, seats: NumberOfSeats, location: TableLocation):
         self.n_seats = seats
         self.location = location
         # TODO: Uncomment next line
         # self.orders = [Order() for _ in range(seats)]
 
-    def has_order_for(self, seat):
+    def has_order_for(self, seat: SeatNumber):
         pass
 
-    def order_for(self, seat):
+    def order_for(self, seat: SeatNumber):
         pass
 
 
@@ -26,7 +33,7 @@ class Order:
     def __init__(self):
         pass
 
-    def add_item(self, menu_item):
+    def add_item(self, menu_item: MenuItem):
         pass
 
     def unordered_items(self):
@@ -41,14 +48,16 @@ class Order:
     def total_cost(self):
         pass
 
+
 class OrderItem:
-    def __init__ (self, menu_item):
+    def __init__(self, menu_item: MenuItem):
         self.menu_item = menu_item
+
     def mark_as_ordered(self):
         pass
 
 
 class MenuItem:
-    def __init__ (self, name, price):
+    def __init__(self, name, price):
         self.name = name
         self.price = price
