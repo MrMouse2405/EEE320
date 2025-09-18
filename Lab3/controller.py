@@ -1,6 +1,6 @@
 from model import Restaurant
 from oorms import ServerView
-from constants import Table, MenuItem, SeatNumber
+from constants import Table, FoodItem, SeatNumber
 
 
 class Controller:
@@ -14,7 +14,7 @@ class Controller:
         self.view = view
         self.restaurant = restaurant
 
-    def add_item(self, item: MenuItem):
+    def add_item(self, item: FoodItem):
         raise RuntimeError("add_item: some subclasses must implement")
 
     def cancel(self):
@@ -46,7 +46,8 @@ class RestaurantController(Controller):
         self.view.create_restaurant_ui()
 
     def table_touched(self, table_index: int):
-        raise RuntimeError("table_touched: some subclasses must implement")
+        pass
+
 
 
 class TableController(Controller):
@@ -86,7 +87,7 @@ class OrderController(Controller):
     def create_ui(self):
         raise RuntimeError("create_ui: all subclasses must implement")
 
-    def add_item(self, menu_tem: MenuItem):
+    def add_item(self, menu_tem: FoodItem):
         raise RuntimeError("add_item: some subclasses must implement")
 
     def update_order(self):
