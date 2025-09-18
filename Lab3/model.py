@@ -15,14 +15,40 @@ class Table:
         # TODO: Uncomment next line
         # self.orders = [Order() for _ in range(seats)]
 
+    def has_order_for(self, seat):
+        pass
+
+    def order_for(self, seat):
+        pass
+
 
 class Order:
-    pass
+    def __init__(self):
+        pass
 
+    def add_item(self, menu_item):
+        pass
+
+    def unordered_items(self):
+        pass
+
+    def place_order(self):
+        pass
+
+    def remove_unordered_items(self):
+        pass
+
+    def total_cost(self):
+        pass
 
 class OrderItem:
-    pass
+    def __init__ (self, menu_item):
+        self.menu_item = menu_item
+    def mark_as_ordered(self):
+        pass
 
 
 class MenuItem:
-    pass
+    def __init__ (self, name, price):
+        self.name = name
+        self.price = price
