@@ -10,17 +10,16 @@ from constants import (
 
 class Restaurant:
     def __init__(self):
-        self.tables = [Table(seats, loc) for seats, loc in TABLES]
-        # TODO: uncomment next line
-        # self.menu_items = [MenuItem(name, price) for name, price in MENU_ITEMS]
+        self.tables : list[Table] = [Table(seats, loc) for seats, loc in TABLES]
+        self.menu_items : list[MenuItem] = [MenuItem(name, price) for name, price in MENU_ITEMS]
+
 
 
 class Table:
     def __init__(self, seats: NumberOfSeats, location: TableLocation):
-        self.n_seats = seats
+        self.n_seat = seats
         self.location = location
-        # TODO: Uncomment next line
-        # self.orders = [Order() for _ in range(seats)]
+        self.orders : list[Order] = [Order() for _ in range(seats)]
 
     def has_order_for(self, seat: SeatNumber):
         pass
