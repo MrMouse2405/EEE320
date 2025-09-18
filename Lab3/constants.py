@@ -1,3 +1,4 @@
+type SeatNumber = int
 type NumberOfSeats = int
 type TableLocation = tuple[int, int]
 type Table = tuple[NumberOfSeats, TableLocation]
