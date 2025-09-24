@@ -1,9 +1,29 @@
 import math
 import tkinter as tk
-
-from constants import *
-from controller import RestaurantController
+import controller
 from model import Restaurant
+from constants import (
+    SERVER_VIEW_HEIGHT,
+    SERVER_VIEW_WIDTH,
+    SEAT_DIAM,
+    SEAT_SPACING,
+    TABLE_WIDTH,
+    TABLE_STYLE,
+    SINGLE_TABLE_LOCATION,
+    EMPTY_SEAT_STYLE,
+    BUTTON_SIZE,
+    BUTTON_STYLE,
+    BUTTON_BOTTOM_RIGHT,
+    BUTTON_BOTTOM_LEFT,
+    BUTTON_TEXT_STYLE,
+    ORDER_ITEM_LOCATION,
+    DOT_SIZE,
+    DOT_MARGIN,
+    NOT_YET_ORDERED_STYLE,
+    ORDERED_STYLE,
+    RESTAURANT_SCALE,
+    MENU_ITEM_SIZE,
+)
 
 
 class ServerView(tk.Frame):
@@ -20,7 +40,7 @@ class ServerView(tk.Frame):
         self.canvas.grid()
         self.canvas.update()
         self.restaurant = restaurant
-        self.controller = RestaurantController(self, restaurant)
+        self.controller = controller.RestaurantController(self, restaurant)
         self.controller.create_ui()
 
     def set_controller(self, controller):

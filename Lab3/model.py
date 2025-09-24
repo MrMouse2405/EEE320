@@ -1,22 +1,16 @@
-from constants import (
-    TABLES,
-    MENU_ITEMS,
-    SeatNumber,
-    FoodItem,
-    NumberOfSeats,
-    TableLocation,
-    Cost
-)
+from constants import TABLES, MENU_ITEMS, SeatNumber, NumberOfSeats, TableLocation, Cost
 
 
 class Restaurant:
     def __init__(self):
         self.tables: list[Table] = [Table(seats, loc) for seats, loc in TABLES]
-        self.menu_items: list[MenuItem] = [MenuItem(name, price) for name, price in MENU_ITEMS]
+        self.menu_items: list[MenuItem] = [
+            MenuItem(name, price) for name, price in MENU_ITEMS
+        ]
 
 
 class MenuItem:
-    def __init__(self, name, price):
+    def __init__(self, name: str, price: float):
         self.name = name
         self.price = price
 
@@ -62,7 +56,7 @@ class Order:
 
 class Table:
     def __init__(self, seats: NumberOfSeats, location: TableLocation):
-        self.n_seat = seats
+        self.n_seats = seats
         self.location = location
         self.orders: list[Order] = [Order() for _ in range(seats)]
 
