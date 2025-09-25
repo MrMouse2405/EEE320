@@ -11,6 +11,7 @@ from constants import (
     TABLE_STYLE,
     SINGLE_TABLE_LOCATION,
     EMPTY_SEAT_STYLE,
+    FULL_SEAT_STYLE,
     BUTTON_SIZE,
     BUTTON_STYLE,
     BUTTON_BOTTOM_RIGHT,
@@ -95,9 +96,7 @@ class ServerView(tk.Frame):
             seat_bbox = scale_and_offset(
                 seat_x0, seat_y0, SEAT_DIAM, SEAT_DIAM, offset_x0, offset_y0, scale
             )
-            # TODO: delete next line, uncomment the line following
-            style = EMPTY_SEAT_STYLE
-            # style = FULL_SEAT_STYLE if table.has_order_for(ix) else EMPTY_SEAT_STYLE
+            style = FULL_SEAT_STYLE if table.has_order_for(ix) else EMPTY_SEAT_STYLE
             seat_id = self.canvas.create_oval(*seat_bbox, **style)
             seat_ids.append(seat_id)
         return table_id, seat_ids

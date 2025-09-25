@@ -1,13 +1,12 @@
+import unittest
+from model import Restaurant, Table, Order, OrderItem
 from controller import (
     RestaurantController,
     TableController,
     OrderController,
     Controller,
 )
-from constants import MENU_ITEMS
-from model import Restaurant, Table, Order, OrderItem
 
-import unittest
 
 RESTAURANT_UI = "restaurant UI"
 TABLE_UI = "table UI"
@@ -85,67 +84,71 @@ class OORMSTestCase(unittest.TestCase):
         self.view.controller.add_item(the_menu_item)
         return self.restaurant.tables[2].order_for(4), the_menu_item
 
-    # def test_order_controller_add_item(self):
-    #     the_order, the_menu_item = self.order_an_item()
-    #     self.assertIsInstance(self.view.controller, OrderController)
-    #     self.assertEqual((ORDER_UI, the_order), self.view.last_UI_created)
-    #     self.assertEqual(1, len(the_order.items))
-    #     self.assertIsInstance(the_order.items[0], OrderItem)
-    #     self.assertEqual(the_order.items[0].details, the_menu_item)
-    #     self.assertFalse(the_order.items[0].ordered)
+    def test_order_controller_add_item(self):
+        the_order, the_menu_item = self.order_an_item()
+        self.assertIsInstance(self.view.controller, OrderController)
+        self.assertEqual((ORDER_UI, the_order), self.view.last_UI_created)
+        self.assertEqual(1, len(the_order.items))
+        self.assertIsInstance(the_order.items[0], OrderItem)
+        self.assertEqual(the_order.items[0].details, the_menu_item)
+        self.assertFalse(the_order.items[0].ordered)
 
-    # def test_order_controller_update_order(self):
-    #     the_order, the_menu_item = self.order_an_item()
-    #     self.view.last_UI_created = None
-    #     self.view.controller.update_order()
-    #     self.assertEqual((TABLE_UI, self.restaurant.tables[2]), self.view.last_UI_created)
-    #     self.assertEqual(1, len(the_order.items))
-    #     self.assertIsInstance(the_order.items[0], OrderItem)
-    #     self.assertEqual(the_order.items[0].details, the_menu_item)
-    #     self.assertTrue(the_order.items[0].ordered)
+    def test_order_controller_update_order(self):
+        the_order, the_menu_item = self.order_an_item()
+        self.view.last_UI_created = None
+        self.view.controller.update_order()
+        self.assertEqual(
+            (TABLE_UI, self.restaurant.tables[2]), self.view.last_UI_created
+        )
+        self.assertEqual(1, len(the_order.items))
+        self.assertIsInstance(the_order.items[0], OrderItem)
+        self.assertEqual(the_order.items[0].details, the_menu_item)
+        self.assertTrue(the_order.items[0].ordered)
 
-    # def test_order_controller_cancel(self):
-    #     the_order, the_menu_item = self.order_an_item()
-    #     self.view.last_UI_created = None
-    #     self.view.controller.cancel()
-    #     self.assertEqual((TABLE_UI, self.restaurant.tables[2]), self.view.last_UI_created)
-    #     self.assertEqual(0, len(the_order.items))
+    def test_order_controller_cancel(self):
+        the_order, the_menu_item = self.order_an_item()
+        self.view.last_UI_created = None
+        self.view.controller.cancel()
+        self.assertEqual(
+            (TABLE_UI, self.restaurant.tables[2]), self.view.last_UI_created
+        )
+        self.assertEqual(0, len(the_order.items))
 
-    # def test_order_controller_update_several_then_cancel(self):
-    #     self.view.controller.table_touched(6)
-    #     self.view.controller.seat_touched(7)
-    #     the_order = self.restaurant.tables[6].order_for(7)
-    #     self.view.controller.add_item(self.restaurant.menu_items[0])
-    #     self.view.controller.add_item(self.restaurant.menu_items[3])
-    #     self.view.controller.add_item(self.restaurant.menu_items[5])
-    #     self.view.controller.update_order()
+    def test_order_controller_update_several_then_cancel(self):
+        self.view.controller.table_touched(6)
+        self.view.controller.seat_touched(7)
+        the_order = self.restaurant.tables[6].order_for(7)
+        self.view.controller.add_item(self.restaurant.menu_items[0])
+        self.view.controller.add_item(self.restaurant.menu_items[3])
+        self.view.controller.add_item(self.restaurant.menu_items[5])
+        self.view.controller.update_order()
 
-    #     def check_first_three_items(menu_items, items):
-    #         self.assertEqual(menu_items[0], items[0].details)
-    #         self.assertEqual(menu_items[3], items[1].details)
-    #         self.assertEqual(menu_items[5], items[2].details)
+        def check_first_three_items(menu_items, items):
+            self.assertEqual(menu_items[0], items[0].details)
+            self.assertEqual(menu_items[3], items[1].details)
+            self.assertEqual(menu_items[5], items[2].details)
 
-    #     self.assertEqual(3, len(the_order.items))
-    #     check_first_three_items(self.restaurant.menu_items, the_order.items)
+        self.assertEqual(3, len(the_order.items))
+        check_first_three_items(self.restaurant.menu_items, the_order.items)
 
-    #     def add_two_more(menu_items, view):
-    #         view.controller.seat_touched(7)
-    #         view.controller.add_item(menu_items[1])
-    #         view.controller.add_item(menu_items[2])
+        def add_two_more(menu_items, view):
+            view.controller.seat_touched(7)
+            view.controller.add_item(menu_items[1])
+            view.controller.add_item(menu_items[2])
 
-    #     add_two_more(self.restaurant.menu_items, self.view)
-    #     self.view.controller.cancel()
+        add_two_more(self.restaurant.menu_items, self.view)
+        self.view.controller.cancel()
 
-    #     self.assertEqual(3, len(the_order.items))
-    #     check_first_three_items(self.restaurant.menu_items, the_order.items)
+        self.assertEqual(3, len(the_order.items))
+        check_first_three_items(self.restaurant.menu_items, the_order.items)
 
-    #     add_two_more(self.restaurant.menu_items, self.view)
-    #     self.view.controller.update_order()
+        add_two_more(self.restaurant.menu_items, self.view)
+        self.view.controller.update_order()
 
-    #     self.assertEqual(5, len(the_order.items))
-    #     check_first_three_items(self.restaurant.menu_items, the_order.items)
-    #     self.assertEqual(self.restaurant.menu_items[1], the_order.items[3].details)
-    #     self.assertEqual(self.restaurant.menu_items[2], the_order.items[4].details)
+        self.assertEqual(5, len(the_order.items))
+        check_first_three_items(self.restaurant.menu_items, the_order.items)
+        self.assertEqual(self.restaurant.menu_items[1], the_order.items[3].details)
+        self.assertEqual(self.restaurant.menu_items[2], the_order.items[4].details)
 
 
 if __name__ == "__main__":

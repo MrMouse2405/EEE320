@@ -96,9 +96,16 @@ class OrderController(Controller):
 
     def add_item(self, menu_item: FoodItem):
         self.order.add_item(menu_item)
+        self.create_ui()
 
     def update_order(self):
-        raise RuntimeError("update_order: some subclasses must implement")
+        self.order.place_new_orders()
+        self.view.set_controller(
+            TableController(self.view, self.restaurant, self.table)
+        )
 
     def cancel(self):
-        raise RuntimeError("cancel: some subclasses must implement")
+        self.order.remove_unordered_items()
+        self.view.set_controller(
+            TableController(self.view, self.restaurant, self.table)
+        )

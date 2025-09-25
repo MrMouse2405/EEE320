@@ -32,27 +32,17 @@ class Order:
         self.items.append(OrderItem(menu_item))
 
     def unordered_items(self) -> list[OrderItem]:
-        unordered_items = []
-        for item in self.items:
-            if not item.ordered:
-                unordered_items.append(item)
-        return unordered_items
+        return [item for item in self.items if not item.ordered]
 
     def place_new_orders(self):
-        for item in self.unordered_items():
+        for item in self.items:
             item.mark_as_ordered()
 
     def remove_unordered_items(self):
-        for item in self.items:
-            if not item.ordered:
-                self.items.remove(item)
+        self.items = [item for item in self.items if item.ordered]
 
     def total_cost(self) -> Cost:
-        total_cost = 0
-        for item in self.items:
-            total_cost += item.price
-        return total_cost
-
+        return sum(item.details.price for item in self.items)
 
 class Table:
     def __init__(self, seats: NumberOfSeats, location: TableLocation):
@@ -60,8 +50,8 @@ class Table:
         self.location = location
         self.orders: list[Order] = [Order() for _ in range(seats)]
 
-    def has_order_for(self, seat: SeatNumber):
-        pass
+    def has_order_for(self, seat: SeatNumber)-> bool:
+        return len(self.orders[seat].items) != 0
 
     def order_for(self, seat: SeatNumber) -> Order:
         return self.orders[seat]
