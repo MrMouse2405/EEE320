@@ -11,8 +11,8 @@ class Restaurant:
 
 class MenuItem:
     def __init__(self, name: str, price: float):
-        self.name = name
-        self.price = price
+        self.name: str = name
+        self.price: float = price
 
 
 class OrderItem:
@@ -44,13 +44,14 @@ class Order:
     def total_cost(self) -> Cost:
         return sum(item.details.price for item in self.items)
 
+
 class Table:
     def __init__(self, seats: NumberOfSeats, location: TableLocation):
-        self.n_seats = seats
-        self.location = location
+        self.n_seats: NumberOfSeats = seats
+        self.location: TableLocation = location
         self.orders: list[Order] = [Order() for _ in range(seats)]
 
-    def has_order_for(self, seat: SeatNumber)-> bool:
+    def has_order_for(self, seat: SeatNumber) -> bool:
         return len(self.orders[seat].items) != 0
 
     def order_for(self, seat: SeatNumber) -> Order:
