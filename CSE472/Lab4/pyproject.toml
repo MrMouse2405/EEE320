@@ -1,0 +1,14 @@
+[project]
+name = "lab4"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.6",
+    "networkx>=3.5",
+    "numpy>=2.3.3",
+    "packaging>=25.0",
+    "scikit-fuzzy>=0.5.0",
+    "scipy>=1.16.2",
+]
