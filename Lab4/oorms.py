@@ -3,6 +3,7 @@ import tkinter as tk
 from abc import ABC
 import controller
 import model
+from typing import TypeVar
 from constants import (
     SERVER_VIEW_HEIGHT,
     SERVER_VIEW_WIDTH,
@@ -35,6 +36,9 @@ from constants import (
     CANCEL_STYLE,
 )
 
+type View = RestaurantView | ServerView | KitchenView
+type Controller = controller.Controller
+
 
 class RestaurantView(tk.Frame, ABC):
     """
@@ -42,11 +46,16 @@ class RestaurantView(tk.Frame, ABC):
     """
 
     def __init__(
-        self, master, restaurant, window_width, window_height, controller_class
+        self,
+        master: tk.Tk,
+        restaurant: model.Restaurant,
+        window_width: int,
+        window_height: int,
+        controller_class: type[Controller],
     ):
         super().__init__(master)
         self.grid()
-        self.canvas = tk.Canvas(
+        self.canvas: tk.Canvas = tk.Canvas(
             self,
             width=window_width,
             height=window_height,
@@ -55,9 +64,9 @@ class RestaurantView(tk.Frame, ABC):
         )
         self.canvas.grid()
         self.canvas.update()
-        self.restaurant = restaurant
+        self.restaurant: model.Restaurant = restaurant
         self.restaurant.add_view(self)
-        self.controller = controller_class(self, restaurant)
+        self.controller: Controller = controller_class(self, restaurant)
         self.controller.create_ui()
 
     def _make_button(
@@ -79,12 +88,12 @@ class RestaurantView(tk.Frame, ABC):
     def update(self):
         self.controller.create_ui()
 
-    def set_controller(self, controller):
+    def set_controller(self, controller: Controller):
         self.controller = controller
 
 
 class ServerView(RestaurantView):
-    def __init__(self, master, restaurant):
+    def __init__(self, master: tk.Tk, restaurant: model.Restaurant):
         super().__init__(
             master,
             restaurant,

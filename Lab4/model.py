@@ -1,5 +1,8 @@
-from constants import TABLES, MENU_ITEMS, NumberOfSeats, SeatNumber, TableLocation
 import oorms
+from constants import TABLES, MENU_ITEMS, NumberOfSeats, SeatNumber, TableLocation
+
+
+type View = oorms.View
 
 
 class Restaurant:
@@ -9,9 +12,9 @@ class Restaurant:
         self.menu_items: list[MenuItem] = [
             MenuItem(name, price) for name, price in MENU_ITEMS
         ]
-        self.views: list[oorms.ServerView] = []
+        self.views: list[View] = []
 
-    def add_view(self, view):
+    def add_view(self, view: View):
         self.views.append(view)
 
     def notify_views(self):
@@ -34,14 +37,14 @@ class OrderItem:
     def mark_as_ordered(self):
         self.__ordered = True
 
-    def has_been_ordered(self):
+    def has_been_ordered(self) -> bool:
         return self.__ordered
 
-    def has_been_served(self):
+    def has_been_served(self) -> bool:
         # TODO: correct implementation based on item state
         return False
 
-    def can_be_cancelled(self):
+    def can_be_cancelled(self) -> bool:
         # TODO: correct implementation based on item state
         return True
 

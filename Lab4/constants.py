@@ -7,7 +7,6 @@ type MenuItemName = str
 type Cost = float
 type FoodItem = tuple[MenuItemName, Cost]
 
-
 # Restaurant data
 TABLES = [
     (6, (20, 20)),

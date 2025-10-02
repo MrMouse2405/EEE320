@@ -1,10 +1,10 @@
 from typing import override
 from constants import SeatNumber
-from abc import ABC
+from abc import ABC, abstractmethod
 import oorms
 import model
 
-type View = oorms.ServerView | oorms.KitchenView
+type View = oorms.View
 
 
 class Controller(ABC):
@@ -12,6 +12,7 @@ class Controller(ABC):
         self.view: View = view
         self.restaurant: model.Restaurant = restaurant
 
+    @abstractmethod
     def create_ui(self) -> None:
         pass
 
