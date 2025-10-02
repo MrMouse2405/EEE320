@@ -29,10 +29,11 @@ class MenuItem:
 
 
 class OrderItem:
-    # TODO: need to represent item state, not just ordered
     def __init__(self, menu_item: MenuItem):
         self.details: MenuItem = menu_item
         self.__ordered: bool = False
+        self.__served: bool = False
+        self.__cancelled: bool = False
 
     def mark_as_ordered(self):
         self.__ordered = True
@@ -40,13 +41,16 @@ class OrderItem:
     def has_been_ordered(self) -> bool:
         return self.__ordered
 
+    def mark_as_served(self) -> bool:
+        self.__served = True
+
     def has_been_served(self) -> bool:
-        # TODO: correct implementation based on item state
-        return False
+        return self.__served
 
     def can_be_cancelled(self) -> bool:
-        # TODO: correct implementation based on item state
-        return True
+        if not self.__served & self.__ordered:
+            self.__cancelled = True
+        return self.__cancelled
 
 
 class Order:
