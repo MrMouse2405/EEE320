@@ -41,16 +41,21 @@ class OrderItem:
     def has_been_ordered(self) -> bool:
         return self.__ordered
 
-    def mark_as_served(self) -> bool:
+    def mark_as_served(self):
         self.__served = True
 
     def has_been_served(self) -> bool:
         return self.__served
 
     def can_be_cancelled(self) -> bool:
-        if not self.__served & self.__ordered:
-            self.__cancelled = True
-        return self.__cancelled
+        if not self.__served:
+            return True
+        return False
+
+    def mark_as_cancelled(self):
+        self.__cancelled = True
+
+
 
 
 class Order:
