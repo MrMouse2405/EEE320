@@ -1,3 +1,6 @@
+import enum
+from operator import truediv
+
 import oorms
 from constants import TABLES, MENU_ITEMS, NumberOfSeats, SeatNumber, TableLocation
 
@@ -27,34 +30,60 @@ class MenuItem:
         self.name: str = name
         self.price: float = price
 
+class OrderState(enum.Enum):
+    NIL     = 0
+    ORDERED = 1
+    COOKING = 2
+    READY_TO_SERVE  = 3
+    SERVED = 4
+    CANCELLED = 5
+
 
 class OrderItem:
+
     def __init__(self, menu_item: MenuItem):
         self.details: MenuItem = menu_item
-        self.__ordered: bool = False
-        self.__served: bool = False
-        self.__cancelled: bool = False
+        self.__state: OrderState = OrderState.NIL
 
     def mark_as_ordered(self):
-        self.__ordered = True
+        self.__state = OrderState.ORDERED
 
     def has_been_ordered(self) -> bool:
-        return self.__ordered
+        return self.__state != OrderState.NIL
 
     def mark_as_served(self):
-        self.__served = True
+        self.__state = OrderState.SERVED
 
     def has_been_served(self) -> bool:
-        return self.__served
+        return self.__state == OrderState.SERVED
 
     def can_be_cancelled(self) -> bool:
-        if not self.__served:
+        if self.__state == OrderState.NIL:
+            return True
+        if self.__state == OrderState.ORDERED:
             return True
         return False
 
+    def get_order_state(self) -> OrderState:
+        return self.__state
+
+    def mark_as_cooking(self):
+        self.__state = OrderState.COOKING
+
+    def has_been_cooking(self) -> bool:
+        return self.__state == OrderState.COOKING
+
+    def mark_as_ready(self):
+        self.__state = OrderState.READY_TO_SERVE
+
+    def has_been_ready(self) -> bool:
+        return self.__state == OrderState.READY_TO_SERVE
+
+
+
     def mark_as_cancelled(self):
         self.__cancelled = True
-
+        self.__state = OrderState.CANCELLED
 
 
 

@@ -37,7 +37,7 @@ from constants import (
 )
 
 type View = RestaurantView | ServerView | KitchenView
-type Controller = controller.Controller
+type Controller = controller.Controller | controller.OrderController | controller.KitchenController
 
 
 class RestaurantView(tk.Frame, ABC):
@@ -190,11 +190,8 @@ class ServerView(RestaurantView):
                 **dot_style,
             )
             if item.can_be_cancelled():
-
                 def handler(_, cancelled_item=item):
-                    # TODO: call appropriate method on controller to remove item from order
-                    pass
-
+                    self.controller.cancel_item(item)
                 self._make_button(
                     "X",
                     handler,
@@ -232,12 +229,16 @@ class KitchenView(RestaurantView):
                 for order in table.orders:
                     for item in order.items:
                         if item.has_been_ordered() and not item.has_been_served():
-                            # TODO: compute button text based on current state of order
-                            button_text = "label here"
+                            button_text = ""
+                            if item.get_order_state() == model.OrderState.ORDERED:
+                                button_text = "Start Cooking"
+                            elif item.get_order_state() == model.OrderState.COOKING:
+                                button_text = "Mark as Ready"
+                            elif item.get_order_state() == model.OrderState.READY_TO_SERVE:
+                                button_text = "Mark as Served"
 
                             def handler(_, order_item=item):
-                                # TODO: call appropriate method on handler
-                                pass
+                                self.controller.update_order(order_item)
 
                             self._make_button(
                                 button_text,

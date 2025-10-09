@@ -85,10 +85,21 @@ class OrderController(Controller):
         )
         self.restaurant.notify_views()
 
+    def cancel_item(self, order_item: model.OrderItem):
+        self.order.remove_item(order_item)
+        self.restaurant.notify_views()
+
 
 class KitchenController(Controller):
     @override
     def create_ui(self):
         self.view.create_kitchen_order_ui()
 
-    # TODO: implement a method to handle button presses on the KitchenView
+    def update_order(self, order_item: model.OrderItem):
+        if order_item.get_order_state() == model.OrderState.ORDERED:
+            order_item.mark_as_cooking()
+        elif order_item.get_order_state() == model.OrderState.COOKING:
+            order_item.mark_as_ready()
+        elif order_item.get_order_state() == model.OrderState.READY_TO_SERVE:
+            order_item.mark_as_served()
+        self.restaurant.notify_views()
