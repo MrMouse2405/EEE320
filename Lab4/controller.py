@@ -96,10 +96,13 @@ class KitchenController(Controller):
         self.view.create_kitchen_order_ui()
 
     def update_order(self, order_item: model.OrderItem):
-        if order_item.get_order_state() == model.OrderState.ORDERED:
-            order_item.mark_as_cooking()
-        elif order_item.get_order_state() == model.OrderState.COOKING:
-            order_item.mark_as_ready()
-        elif order_item.get_order_state() == model.OrderState.READY_TO_SERVE:
-            order_item.mark_as_served()
+        match order_item.get_order_state():
+            case model.OrderState.PLACED:
+                order_item.mark_as_ordered()
+            case model.OrderState.COOKING:
+                order_item.mark_as_ready()
+            case model.OrderState.READY:
+                order_item.mark_as_served()
+            case _:
+                pass
         self.restaurant.notify_views()

@@ -37,7 +37,9 @@ from constants import (
 )
 
 type View = RestaurantView | ServerView | KitchenView
-type Controller = controller.Controller | controller.OrderController | controller.KitchenController
+type Controller = (
+    controller.Controller | controller.OrderController | controller.KitchenController
+)
 
 
 class RestaurantView(tk.Frame, ABC):
@@ -190,8 +192,10 @@ class ServerView(RestaurantView):
                 **dot_style,
             )
             if item.can_be_cancelled():
+
                 def handler(_, cancelled_item=item):
                     self.controller.cancel_item(item)
+
                 self._make_button(
                     "X",
                     handler,
@@ -230,12 +234,15 @@ class KitchenView(RestaurantView):
                     for item in order.items:
                         if item.has_been_ordered() and not item.has_been_served():
                             button_text = ""
-                            if item.get_order_state() == model.OrderState.ORDERED:
-                                button_text = "Start Cooking"
-                            elif item.get_order_state() == model.OrderState.COOKING:
-                                button_text = "Mark as Ready"
-                            elif item.get_order_state() == model.OrderState.READY_TO_SERVE:
-                                button_text = "Mark as Served"
+                            match item.get_order_state():
+                                case model.OrderState.PLACED:
+                                    button_text = "Start Cooking"
+                                case model.OrderState.COOKING:
+                                    button_text = "Mark as Ready"
+                                case model.OrderState.READY:
+                                    button_text = "Mark as Served"
+                                case _:
+                                    assert "This item should not be displayed!"
 
                             def handler(_, order_item=item):
                                 self.controller.update_order(order_item)

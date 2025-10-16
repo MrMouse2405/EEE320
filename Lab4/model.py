@@ -1,5 +1,4 @@
-import enum
-from operator import truediv
+from enum import Enum, auto
 
 import oorms
 from constants import TABLES, MENU_ITEMS, NumberOfSeats, SeatNumber, TableLocation
@@ -30,26 +29,26 @@ class MenuItem:
         self.name: str = name
         self.price: float = price
 
-class OrderState(enum.Enum):
-    NIL     = 0
-    ORDERED = 1
-    COOKING = 2
-    READY_TO_SERVE  = 3
-    SERVED = 4
-    CANCELLED = 5
+
+class OrderState(Enum):
+    REQUESTED = auto()
+    PLACED = auto()
+    COOKING = auto()
+    READY = auto()
+    SERVED = auto()
+    CANCELLED = auto()
 
 
 class OrderItem:
-
     def __init__(self, menu_item: MenuItem):
         self.details: MenuItem = menu_item
-        self.__state: OrderState = OrderState.NIL
+        self.__state: OrderState = OrderState.REQUESTED
 
     def mark_as_ordered(self):
-        self.__state = OrderState.ORDERED
+        self.__state = OrderState.PLACED
 
     def has_been_ordered(self) -> bool:
-        return self.__state != OrderState.NIL
+        return self.__state != OrderState.REQUESTED
 
     def mark_as_served(self):
         self.__state = OrderState.SERVED
@@ -58,11 +57,7 @@ class OrderItem:
         return self.__state == OrderState.SERVED
 
     def can_be_cancelled(self) -> bool:
-        if self.__state == OrderState.NIL:
-            return True
-        if self.__state == OrderState.ORDERED:
-            return True
-        return False
+        return self.__state == OrderState.REQUESTED or self.__state == OrderState.PLACED
 
     def get_order_state(self) -> OrderState:
         return self.__state
@@ -74,17 +69,16 @@ class OrderItem:
         return self.__state == OrderState.COOKING
 
     def mark_as_ready(self):
-        self.__state = OrderState.READY_TO_SERVE
+        self.__state = OrderState.READY
 
     def has_been_ready(self) -> bool:
-        return self.__state == OrderState.READY_TO_SERVE
+        return self.__state == OrderState.READY
 
-
+    def has_been_cancelled(self) -> bool:
+        return self.__state == OrderState.CANCELLED
 
     def mark_as_cancelled(self):
-        self.__cancelled = True
         self.__state = OrderState.CANCELLED
-
 
 
 class Order:
