@@ -98,7 +98,7 @@ class KitchenController(Controller):
     def update_order(self, order_item: model.OrderItem):
         match order_item.get_order_state():
             case model.OrderState.PLACED:
-                order_item.mark_as_ordered()
+                order_item.mark_as_cooking()
             case model.OrderState.COOKING:
                 order_item.mark_as_ready()
             case model.OrderState.READY:

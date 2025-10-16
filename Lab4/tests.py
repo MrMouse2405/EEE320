@@ -2,7 +2,7 @@ import unittest
 from enum import Enum, auto
 
 from controller import RestaurantController, TableController, OrderController
-from model import Restaurant, OrderItem
+from model import MenuItem, Restaurant, OrderItem, Order
 
 
 class UI(Enum):
@@ -157,6 +157,40 @@ class OORMSTestCase(unittest.TestCase):
         check_first_three_items(self.restaurant.menu_items, the_order.items)
         self.assertEqual(self.restaurant.menu_items[1], the_order.items[3].details)
         self.assertEqual(self.restaurant.menu_items[2], the_order.items[4].details)
+
+
+class Lab4TakeTableOrders(unittest.TestCase):
+    def setUp(self):
+        self.restaurant = Restaurant()
+        self.view = ServerViewMock(self.restaurant)
+        self.restaurant.add_view(self.view)
+
+    def order_an_item(self) -> tuple[Order, MenuItem]:
+        """
+        Starting from the restaurant UI, orders one instance of item 0
+        for table 2, seat 4
+        """
+        self.view.controller.table_touched(2)
+        self.view.controller.seat_touched(4)
+        the_menu_item = self.restaurant.menu_items[0]
+        self.view.last_UI_created = None
+        self.view.controller.add_item(the_menu_item)
+        return self.restaurant.tables[2].order_for(4), the_menu_item
+
+    def check_order_state(self):
+        """ """
+        the_order, the_menu_item = self.order_an_item()
+
+
+class Lab4CookOrders(unittest.TestCase):
+    def setUp(self):
+        self.restaurant = Restaurant()
+        self.view = ServerViewMock(self.restaurant)
+        self.restaurant.add_view(self.view)
+
+    def test_initial_state(self):
+        self.assertEqual(UI.RESTAURANT, self.view.last_UI_created)
+        self.assertIsInstance(self.view.controller, RestaurantController)
 
 
 if __name__ == "__main__":
