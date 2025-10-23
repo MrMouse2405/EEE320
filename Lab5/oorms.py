@@ -3,8 +3,8 @@ Provides the user interface for the Object-oriented Restaurant Management
 application (OORMS). This includes the server's view and a window simulating
 the tape of a bill printer.
 
-Submitting lab group: [your names here]
-Submission date: [date here]
+Submitting lab group: Syed, Pabon
+Submission date: Nov 5, 2025
 
 Original code by EEE320 instructors.
 """

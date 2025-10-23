@@ -2,8 +2,8 @@
 Provides the model classes representing the state of the OORMS
 system.
 
-Submitting lab group: [your names here]
-Submission date: [date here]
+Submitting lab group: Syed, Pabon
+Submission date: Nov 5, 2025
 
 Original code by EEE320 instructors.
 """
