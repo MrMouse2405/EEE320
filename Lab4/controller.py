@@ -1,10 +1,10 @@
 from typing import override
 from constants import SeatNumber
 from abc import ABC, abstractmethod
-import oorms
+import
 import model
 
-type View = oorms.View
+type View = .View
 
 
 class Controller(ABC):

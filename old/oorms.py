@@ -1,8 +1,19 @@
+"""
+Provides the user interface for the Object-oriented Restaurant Management
+application (OORMS). This includes the server's view and a window simulating
+the tape of a bill printer.
+
+Submitting lab group: Syed, Pabon
+Submission date: Nov 5, 2025
+
+Original code by EEE320 instructors.
+"""
+
+from __future__ import annotations
 import math
 import tkinter as tk
 from abc import ABC
-import model
-from typing import TypeVar
+from typing import override
 from constants import (
     SERVER_VIEW_HEIGHT,
     SERVER_VIEW_WIDTH,
@@ -25,34 +36,29 @@ from constants import (
     ORDERED_STYLE,
     RESTAURANT_SCALE,
     MENU_ITEM_SIZE,
-    KITCHEN_VIEW_HEIGHT,
-    KITCHEN_VIEW_WIDTH,
-    K_LEFT,
-    K_BUTTON_SIZE,
-    K_LINE_HEIGHT,
-    K_SPACE,
     CANCEL_SIZE,
     CANCEL_STYLE,
 )
+import controller
+import model
 
-type View = RestaurantView | ServerView | KitchenView
-type Controller = (
-    .Controller | .OrderController | .KitchenController
-)
+type Controller = controller.Controller
+type RestaurantController = controller.RestaurantController
+type ControllerClass = Controller | RestaurantController | controller.TableController
+
+type Order = model.Order
+type Restaurant = model.Restaurant
+type Table = model.Table
 
 
 class RestaurantView(tk.Frame, ABC):
-    """
-    An abstract superclass view.
-    """
-
     def __init__(
         self,
         master: tk.Tk,
-        restaurant: model.Restaurant,
+        restaurant: Restaurant,
         window_width: int,
         window_height: int,
-        controller_class: type[Controller],
+        controller_class: type[ControllerClass],
     ):
         super().__init__(master)
         self.grid()
@@ -65,12 +71,15 @@ class RestaurantView(tk.Frame, ABC):
         )
         self.canvas.grid()
         self.canvas.update()
-        self.restaurant: model.Restaurant = restaurant
+        self.restaurant: Restaurant = restaurant
         self.restaurant.add_view(self)
-        self.controller: Controller = controller_class(self, restaurant)
+        self.controller: ControllerClass = controller_class(
+            self,
+            restaurant,
+        )
         self.controller.create_ui()
 
-    def _make_button(
+    def make_button(
         self,
         text,
         action,
@@ -86,6 +95,7 @@ class RestaurantView(tk.Frame, ABC):
         self.canvas.tag_bind(box, "<Button-1>", action)
         self.canvas.tag_bind(label, "<Button-1>", action)
 
+    @override
     def update(self):
         self.controller.create_ui()
 
@@ -94,20 +104,21 @@ class RestaurantView(tk.Frame, ABC):
 
 
 class ServerView(RestaurantView):
-    def __init__(self, master: tk.Tk, restaurant: model.Restaurant):
+    def __init__(self, master, restaurant, printer_window):
         super().__init__(
             master,
             restaurant,
             SERVER_VIEW_WIDTH,
             SERVER_VIEW_HEIGHT,
-            .RestaurantController,
+            controller.RestaurantController,
         )
+        self.printer_window = printer_window
 
     def create_restaurant_ui(self):
         self.canvas.delete(tk.ALL)
         view_ids = []
         for ix, table in enumerate(self.restaurant.tables):
-            table_id, seat_ids = self._draw_table(table, scale=RESTAURANT_SCALE)
+            table_id, seat_ids = self.draw_table(table, scale=RESTAURANT_SCALE)
             view_ids.append((table_id, seat_ids))
         for ix, (table_id, seat_ids) in enumerate(view_ids):
             # §54.7 "extra arguments trick" in Tkinter 8.5 reference by Shipman
@@ -120,23 +131,29 @@ class ServerView(RestaurantView):
             for seat_id in seat_ids:
                 self.canvas.tag_bind(seat_id, "<Button-1>", table_touch_handler)
 
-    def create_table_ui(self, table):
+    def create_table_ui(self, table: Table):
         self.canvas.delete(tk.ALL)
-        table_id, seat_ids = self._draw_table(table, location=SINGLE_TABLE_LOCATION)
+        table_id, seat_ids = self.draw_table(table, location=SINGLE_TABLE_LOCATION)
         for ix, seat_id in enumerate(seat_ids):
 
             def handler(_, seat_number=ix):
                 self.controller.seat_touched(seat_number)
 
             self.canvas.tag_bind(seat_id, "<Button-1>", handler)
-        self._make_button("Done", action=lambda event: self.controller.done())
+        self.make_button("Done", action=lambda event: self.controller.done())
+        if table.has_any_active_orders():
+            self.make_button(
+                "Create Bills",
+                action=lambda event: self.controller.make_bills(self.printer_window),
+                location=BUTTON_BOTTOM_LEFT,
+            )
 
-    def _draw_table(self, table, location=None, scale=1):
+    def draw_table(self, table: Table, location=None, scale=1):
         offset_x0, offset_y0 = location if location else table.location
         seats_per_side = math.ceil(table.n_seats / 2)
         table_height = SEAT_DIAM * seats_per_side + SEAT_SPACING * (seats_per_side - 1)
         table_x0 = SEAT_DIAM + SEAT_SPACING
-        table_bbox = _scale_and_offset(
+        table_bbox = scale_and_offset(
             table_x0, 0, TABLE_WIDTH, table_height, offset_x0, offset_y0, scale
         )
         table_id = self.canvas.create_rectangle(*table_bbox, **TABLE_STYLE)
@@ -148,7 +165,7 @@ class ServerView(RestaurantView):
                 ix // 2 * (SEAT_DIAM + SEAT_SPACING)
                 + (table.n_seats % 2) * (ix % 2) * (SEAT_DIAM + SEAT_SPACING) / 2
             )
-            seat_bbox = _scale_and_offset(
+            seat_bbox = scale_and_offset(
                 seat_x0, seat_y0, SEAT_DIAM, SEAT_DIAM, offset_x0, offset_y0, scale
             )
             style = FULL_SEAT_STYLE if table.has_order_for(ix) else EMPTY_SEAT_STYLE
@@ -156,7 +173,7 @@ class ServerView(RestaurantView):
             seat_ids.append(seat_id)
         return table_id, seat_ids
 
-    def create_order_ui(self, order):
+    def create_order_ui(self, order: Order):
         self.canvas.delete(tk.ALL)
         for ix, item in enumerate(self.restaurant.menu_items):
             w, h, margin = MENU_ITEM_SIZE
@@ -166,16 +183,16 @@ class ServerView(RestaurantView):
             def handler(_, menuitem=item):
                 self.controller.add_item(menuitem)
 
-            self._make_button(item.name, handler, (w, h), (x0, y0))
-        self._draw_order(order)
-        self._make_button(
+            self.make_button(item.name, handler, (w, h), (x0, y0))
+        self.draw_order(order)
+        self.make_button(
             "Cancel",
             lambda event: self.controller.cancel_changes(),
             location=BUTTON_BOTTOM_LEFT,
         )
-        self._make_button("Place Orders", lambda event: self.controller.update_order())
+        self.make_button("Update Order", lambda event: self.controller.update_order())
 
-    def _draw_order(self, order):
+    def draw_order(self, order):
         x0, h, m = ORDER_ITEM_LOCATION
         for ix, item in enumerate(order.items):
             y0 = m + ix * h
@@ -193,9 +210,9 @@ class ServerView(RestaurantView):
             if item.can_be_cancelled():
 
                 def handler(_, cancelled_item=item):
-                    self.controller.cancel_item(item)
+                    self.controller.remove(cancelled_item)
 
-                self._make_button(
+                self.make_button(
                     "X",
                     handler,
                     size=CANCEL_SIZE,
@@ -210,68 +227,40 @@ class ServerView(RestaurantView):
         )
 
 
-class KitchenView(RestaurantView):
-    def __init__(self, master, restaurant):
-        super().__init__(
-            master,
-            restaurant,
-            KITCHEN_VIEW_WIDTH,
-            KITCHEN_VIEW_HEIGHT,
-            .KitchenController,
+class Printer(tk.Frame):
+    """
+    Simulates a physical printer with a monospaced font, a maximum of 40 characters
+    wide. To print, call the print() method passing the desired text as a parameter.
+    The text may include \n (newline) characters to indicate line breaks.
+    """
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.grid()
+        scrollbar = tk.Scrollbar(self)
+        scrollbar.grid(row=0, column=1, sticky=tk.N + tk.S)
+        self.tape = tk.Text(
+            self,
+            wrap=None,
+            bd=0,
+            yscrollcommand=scrollbar.set,
+            font=TAPE_FONT,
+            state=tk.DISABLED,
+            width=TAPE_WIDTH,
+            height=VISIBLE_LINES,
         )
+        self.tape.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        scrollbar.config(command=self.tape.yview)
 
-    def create_kitchen_order_ui(self):
-        self.canvas.delete(tk.ALL)
-        line = 0
-        for table_number, table in enumerate(self.restaurant.tables):
-            if table.has_any_active_orders():
-                self.draw_text_line(
-                    f"Table {table_number}", K_LEFT, (line + 0.5) * K_LINE_HEIGHT
-                )
-                line += 1
-                for order in table.orders:
-                    for item in order.items:
-                        if item.has_been_ordered() and not item.has_been_served():
-                            button_text = ""
-                            match item.get_order_state():
-                                case model.OrderState.PLACED:
-                                    button_text = "Start Cooking"
-                                case model.OrderState.COOKING:
-                                    button_text = "Mark as Ready"
-                                case model.OrderState.READY:
-                                    button_text = "Mark as Served"
-                                case _:
-                                    assert "This item should not be displayed!"
-
-                            def handler(_, order_item=item):
-                                self.controller.update_order(order_item)
-
-                            self._make_button(
-                                button_text,
-                                handler,
-                                location=(K_LEFT, line * K_LINE_HEIGHT),
-                                size=K_BUTTON_SIZE,
-                            )
-                            self.draw_text_line(
-                                item.details.name,
-                                K_LEFT + K_BUTTON_SIZE[0] + K_SPACE,
-                                (line + 0.4) * K_LINE_HEIGHT,
-                            )
-                            line += 1
-
-    def draw_text_line(self, text, x, y):
-        self.canvas.create_text(x, y, text=text, anchor=tk.W)
+    def print(self, text: str):
+        self.tape["state"] = tk.NORMAL
+        self.tape.insert(tk.END, text)
+        self.tape.insert(tk.END, "\n")
+        self.tape["state"] = tk.DISABLED
+        self.tape.see(tk.END)
 
 
-def _scale_and_offset(
-    x0: int,
-    y0: int,
-    width: int,
-    height: int,
-    offset_x0: int,
-    offset_y0: int,
-    scale: int,
-):
+def scale_and_offset(x0, y0, width, height, offset_x0, offset_y0, scale):
     return (
         (offset_x0 + x0) * scale,
         (offset_y0 + y0) * scale,
@@ -281,25 +270,25 @@ def _scale_and_offset(
 
 
 if __name__ == "__main__":
-    restaurant_info = model.Restaurant()
-
     root = tk.Tk()
-    _ = ServerView(root, restaurant_info)
+
+    printer_window = tk.Toplevel()
+    printer_proxy = Printer(printer_window)
+    printer_window.title("Printer Tape")
+    printer_window.wm_resizable(False, False)
+
+    restaurant_info = model.Restaurant()
+    _ = ServerView(root, restaurant_info, printer_proxy)
     root.title("Server View v2")
     root.wm_resizable(False, False)
 
-    kitchen_window = tk.Toplevel()
-    _ = KitchenView(kitchen_window, restaurant_info)
-    kitchen_window.title("Kitchen View v2")
-    kitchen_window.wm_resizable(False, False)
-
     # nicely align the two windows
     root.update_idletasks()
-    kh = kitchen_window.winfo_height()
-    kw = kitchen_window.winfo_width()
+    ph = printer_window.winfo_height()
+    pw = printer_window.winfo_width()
     sw = root.winfo_width()
     sx = root.winfo_x()
     sy = root.winfo_y()
-    kitchen_window.geometry(f"{kw}x{kh}+{sx + sw + 10}+{sy}")
+    printer_window.geometry(f"{pw}x{ph}+{sx + sw + 10}+{sy}")
 
     root.mainloop()

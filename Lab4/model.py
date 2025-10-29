@@ -1,10 +1,10 @@
 from enum import Enum, auto
 
-import oorms
+import
 from constants import TABLES, MENU_ITEMS, NumberOfSeats, SeatNumber, TableLocation
 
 
-type View = oorms.View
+type View = .View
 
 
 class Restaurant:
