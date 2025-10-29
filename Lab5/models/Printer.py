@@ -1,0 +1,6 @@
+from mvc import Model
+
+
+class Printer(Model):
+    def __init__(self) -> None:
+        super().__init__()

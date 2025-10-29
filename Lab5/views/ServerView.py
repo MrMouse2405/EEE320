@@ -1,4 +1,3 @@
-import math
 from tkinter import ALL, Tk, Canvas
 from typing import override, Callable
 from collections.abc import Sequence

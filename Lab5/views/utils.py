@@ -1,9 +1,7 @@
 import math
 from tkinter import Canvas
 from typing import Callable
-
-from models import Table, TableLocation
-
+from models import Table
 from constants import (
     EMPTY_SEAT_FILL,
     FULL_SEAT_FILL,
@@ -16,19 +14,9 @@ from constants import (
     TABLE_FILL,
     TABLE_OUTLINE,
     TABLE_WIDTH,
-    SINGLE_TABLE_LOCATION,
     BUTTON_SIZE,
     BUTTON_STYLE,
     BUTTON_TEXT_STYLE,
-    ORDER_ITEM_LOCATION,
-    DOT_SIZE,
-    DOT_MARGIN,
-    NOT_YET_ORDERED_STYLE,
-    ORDERED_STYLE,
-    RESTAURANT_SCALE,
-    MENU_ITEM_SIZE,
-    CANCEL_SIZE,
-    CANCEL_STYLE,
     TableLocation,
 )
 
