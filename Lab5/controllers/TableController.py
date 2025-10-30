@@ -1,6 +1,9 @@
 from __future__ import annotations
+
+from factories.BillViewFactory import BillViewFactory
 from factories.OrderViewFactory import OrderViewFactory
 from models import Table
+from models.Bill import Bill
 from mvc import Controller, ViewRouter
 from views import TableView
 
@@ -21,4 +24,11 @@ class TableController(Controller[TableView, Table]):
         self.navigation.go_back()
 
     def make_bills(self):
-        print("make bills")
+        self.navigation.register(
+            "bill",
+            BillViewFactory(
+                Bill([]),
+                self.navigation
+            )
+        )
+        self.navigation.goto("bill")

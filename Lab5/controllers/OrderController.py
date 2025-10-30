@@ -8,14 +8,18 @@ class OrderController(Controller[OrderView, Order]):
     def __init__(self, view: OrderView, model: Order, navigation: ViewRouter) -> None:
         super().__init__(view, model, navigation)
 
-    def cancel_changes(self):
-        print("cancel changes!")
+    def cancel_changes(self) -> None:
+        self.model.remove_requested_item()
+        self.navigation.go_back()
 
-    def update_order(self):
-        print("update order!")
 
-    def add_item(self, menu_item: MenuItem):
-        print("add item", menu_item)
+    def update_order(self) -> None:
+        self.model.place_new_orders()
+        self.navigation.go_back()
+
+
+    def add_item(self, menu_item: MenuItem) -> None:
+        self.model.add_item(menu_item)
 
     def remove(self, menu_item: OrderItem) -> None:
-        print("remove item", menu_item)
+        self.model.remove_item(menu_item)

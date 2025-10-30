@@ -79,7 +79,7 @@ class OrderView(View[OrderController, Order]):
         x0, h, m = ORDER_ITEM_LOCATION
         for ix, item in enumerate(order.items):
             y0 = m + ix * h
-            _ = self.__canvas.create_text(x0, y0, text=item.details.name, anchor=tk.NW)
+            _ = self.__canvas.create_text(x0, y0, text=item.details.name, anchor=NW)
             dot_style = (
                 ORDERED_STYLE if item.has_been_placed() else NOT_YET_ORDERED_STYLE
             )

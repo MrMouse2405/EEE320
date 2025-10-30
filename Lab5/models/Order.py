@@ -16,8 +16,8 @@ class Order(Model):
         return self.__items
 
     @property
-    def requested_items(self) -> Generator[OrderItem, None, None]:
-        return (item for item in self.__items if not item.has_been_placed())
+    def requested_items(self) -> list[OrderItem]:
+        return [item for item in self.__items if not item.has_been_placed()]
 
     @property
     def total_cost(self) -> float | Literal["0"]:
