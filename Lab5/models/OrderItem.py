@@ -39,3 +39,6 @@ class OrderItem(Model):
 
     def mark_as_billed(self) -> None:
         self.state = OrderState.BILLED
+
+    def can_be_cancelled(self) -> bool:
+        return not self.has_been_billed()
