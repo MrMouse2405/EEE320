@@ -27,7 +27,7 @@ class ServerView(View[ServerController, Restaurant]):
 
     @override
     def create_ui(self) -> None:
-        print("create ui")
+        print("create server ui")
         self.grid()
         self.__canvas = Canvas(
             master=self,

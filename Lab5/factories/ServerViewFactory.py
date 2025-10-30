@@ -1,8 +1,9 @@
+from __future__ import annotations
 from tkinter import Frame
 from typing import override
-from controllers.ServerController import ServerController
+from controllers import ServerController
 from models import Restaurant
-from mvc import MVCFactory
+from mvc import MVCFactory, ViewRouter
 from repositories import MenuItemRepository, TableRepository
 from views import ServerView
 
@@ -20,5 +21,7 @@ class ServerViewFactory(MVCFactory[ServerView, Restaurant, ServerController]):
         return ServerView(parent, model)
 
     @override
-    def build_controller(self, view: ServerView, model: Restaurant) -> ServerController:
-        return ServerController(view, model)
+    def build_controller(
+        self, view: ServerView, model: Restaurant, navigation: ViewRouter
+    ) -> ServerController:
+        return ServerController(view, model, navigation)

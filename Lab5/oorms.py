@@ -5,16 +5,10 @@ Author: OCdt Syed, OCdt Pabon-Gonzalez
 
 """
 
-from tkinter import Canvas, Tk, Frame
-
+from tkinter import Tk, Frame
 from constants import SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
-from controllers import ServerController
 from factories import ServerViewFactory
-from models import Restaurant
 from mvc import ViewRouter
-from repositories import TableRepository
-from repositories.MenuItemRepository import MenuItemRepository
-from views import ServerView
 
 
 class App(Tk):
@@ -36,7 +30,7 @@ class App(Tk):
             container, SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT
         )
 
-        view_router.register("server", ServerViewFactory())
+        view_router.register("server", ServerViewFactory(view_router))
         view_router.goto("server")
 
 

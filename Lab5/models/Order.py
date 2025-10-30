@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections.abc import Generator, Sequence
 from typing import Literal
 from mvc import Model

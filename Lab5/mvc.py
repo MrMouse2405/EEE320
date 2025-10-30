@@ -65,7 +65,7 @@ class ControllerInterface:
     def model(self) -> ModelInterface: ...
 
 
-class NavigationInterface:
+class ViewRouter:
     def goto(
         self, name: str, *, direction: str = "left", record_history: bool = True
     ) -> None: ...
@@ -132,10 +132,11 @@ class Model(ABC, ModelInterface):
 
 
 class Controller(ABC, Generic[VT, MT], ControllerInterface):
-    def __init__(self, view: VT, model: MT) -> None:
+    def __init__(self, view: VT, model: MT, navigation: ViewRouter) -> None:
         super().__init__()
         self.__view: VT = view
         self.__model: MT = model
+        self.__navigation: ViewRouter = navigation
         model.add_views(view)
         view.create_ui()
 
@@ -156,6 +157,10 @@ class Controller(ABC, Generic[VT, MT], ControllerInterface):
     def model(self, model: MT) -> None:
         model.add_views(self.view)
         self.__model = model
+
+    @property
+    def navigation(self) -> ViewRouter:
+        return self.__navigation
 
 
 # ------------------------------------------------------------
@@ -182,10 +187,11 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
     Caches the created trio if cache=True.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, navigation: ViewRouter) -> None:
         self._model: MT
         self._view: VT
         self._controller: CT
+        self._navigation: ViewRouter = navigation
         self._cached: bool = False
 
     @abstractmethod
@@ -193,7 +199,7 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
     @abstractmethod
     def build_view(self, parent: Frame, model: MT) -> VT: ...
     @abstractmethod
-    def build_controller(self, view: VT, model: MT) -> CT: ...
+    def build_controller(self, view: VT, model: MT, navigation: ViewRouter) -> CT: ...
 
     @override
     def create(self, parent: Frame) -> VT:
@@ -201,7 +207,9 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
             return self._view
         self._model = self.build_model()
         self._view = self.build_view(parent, self._model)
-        self._controller = self.build_controller(self._view, self._model)
+        self._controller = self.build_controller(
+            self._view, self._model, self._navigation
+        )
         self._view.controller = self._controller
         return self._view
 
@@ -230,6 +238,7 @@ class ViewRouter:
     def register(self, name: str, factory: MVCFactoryInterface) -> None:
         self._factories[name] = factory
 
+    @override
     def goto(
         self, name: str, *, direction: str = "left", record_history: bool = True
     ) -> None:
@@ -286,6 +295,7 @@ class ViewRouter:
     def can_go_forward(self) -> bool:
         return bool(self._fwd_stack)
 
+    @override
     def go_back(self) -> None:
         if not self._back_stack or self._current_name is None:
             return
@@ -293,6 +303,7 @@ class ViewRouter:
         self._fwd_stack.append(self._current_name)
         self.goto(target, direction="right", record_history=False)
 
+    @override
     def go_forward(self) -> None:
         if not self._fwd_stack or self._current_name is None:
             return

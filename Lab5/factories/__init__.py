@@ -7,5 +7,6 @@ Exports classes for the package
 """
 
 from .ServerViewFactory import ServerViewFactory
+from .TableViewFactory import TableViewFactory
 
-__all__ = ["ServerViewFactory"]
+__all__ = ["ServerViewFactory", "TableViewFactory"]
