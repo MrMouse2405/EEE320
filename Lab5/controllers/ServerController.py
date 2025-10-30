@@ -10,4 +10,5 @@ class ServerController(Controller[ServerView, Restaurant]):
         view.create_restaurant_ui()
 
     def on_table_touch(self, table_number: int) -> None:
+        self.view.refresh()
         print(table_number, "clicked!")

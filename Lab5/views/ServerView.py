@@ -1,4 +1,10 @@
-from tkinter import ALL, Tk, Canvas
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+"""
+
+from tkinter import ALL, Frame, Tk, Canvas
 from typing import override, Callable
 from collections.abc import Sequence
 from controllers import ServerController
@@ -6,44 +12,24 @@ from models.Restaurant import Restaurant
 from mvc import View
 from models import Table
 from constants import (
-    EMPTY_SEAT_FILL,
-    FULL_SEAT_FILL,
-    FULL_SEAT_OUTLINE,
-    GET_BUTTON_BOTTOM_RIGHT,
     SERVER_VIEW_HEIGHT,
     SERVER_VIEW_WIDTH,
-    SEAT_DIAM,
-    SEAT_SPACING,
-    TABLE_FILL,
-    TABLE_OUTLINE,
-    TABLE_WIDTH,
-    SINGLE_TABLE_LOCATION,
-    BUTTON_SIZE,
-    BUTTON_STYLE,
-    BUTTON_TEXT_STYLE,
-    ORDER_ITEM_LOCATION,
-    DOT_SIZE,
-    DOT_MARGIN,
-    NOT_YET_ORDERED_STYLE,
-    ORDERED_STYLE,
     RESTAURANT_SCALE,
-    MENU_ITEM_SIZE,
-    CANCEL_SIZE,
-    CANCEL_STYLE,
-    TableLocation,
 )
 from views.utils import draw_table
 
 
 class ServerView(View[ServerController, Restaurant]):
-    def __init__(self, root: Tk, model: Restaurant) -> None:
+    def __init__(self, root: Frame, model: Restaurant) -> None:
         super().__init__(root, model)
+        self.__Frame: Frame = root
+        self.__animating: bool = False
 
     @override
     def create_ui(self) -> None:
-        print("create_ui")
+        print("create ui")
         self.grid()
-        self.__canvas: Canvas = Canvas(
+        self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
             height=SERVER_VIEW_HEIGHT,
@@ -52,13 +38,14 @@ class ServerView(View[ServerController, Restaurant]):
         )
         self.__canvas.grid()
         self.__canvas.update()
+        self.create_restaurant_ui()
 
     @override
     def refresh(self) -> None:
         self.__canvas.delete(ALL)
         self.create_restaurant_ui()
 
-    def create_restaurant_ui(self) -> None:
+    def create_restaurant_ui(self, tag: str = "scene") -> None:
         tables: Sequence[Table] = self.model.tables
         view_ids: list[tuple[int, list[int]]] = []
 
@@ -67,6 +54,10 @@ class ServerView(View[ServerController, Restaurant]):
                 self.__canvas, table, scale=RESTAURANT_SCALE
             )
             view_ids.append((table_id, seat_ids))
+            # Tag everything that belongs to the scene
+            self.__canvas.addtag_withtag(tag, table_id)
+            for sid in seat_ids:
+                self.__canvas.addtag_withtag(tag, sid)
 
         for ix, (table_id, seat_ids) in enumerate(view_ids):
             # §54.7 "extra arguments trick" in Tkinter 8.5 reference by Shipman

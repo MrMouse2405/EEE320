@@ -1,3 +1,10 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+"""
+
 import math
 from tkinter import Canvas
 from typing import Callable
