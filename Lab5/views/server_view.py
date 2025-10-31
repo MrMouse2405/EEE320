@@ -4,11 +4,11 @@ EEE320 Object Oriented Programming Lab 5
 Author: OCdt Syed, OCdt Pabon-Gonzalez
 """
 
-from tkinter import ALL, Frame, Tk, Canvas
-from typing import override, Callable
+from tkinter import ALL, Frame, Canvas
+from typing import override
 from collections.abc import Sequence
 from controllers import ServerController
-from models.Restaurant import Restaurant
+from models.restaurant import Restaurant
 from mvc import View
 from models import Table
 from constants import (
@@ -28,7 +28,6 @@ class ServerView(View[ServerController, Restaurant]):
     @override
     def create_ui(self) -> None:
         print("create server ui")
-        self.grid()
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -42,6 +41,7 @@ class ServerView(View[ServerController, Restaurant]):
 
     @override
     def refresh(self) -> None:
+        print("refresh server ui")
         self.__canvas.delete(ALL)
         self.create_restaurant_ui()
 

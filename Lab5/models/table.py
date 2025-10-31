@@ -1,14 +1,23 @@
+from collections.abc import Sequence
 from mvc import Model
 from constants import NumberOfSeats, TableLocation
-from .Order import Order
+from .order import Order
 
 
 class Table(Model):
-    def __init__(self, n_seats: NumberOfSeats, location: TableLocation) -> None:
+    def __init__(
+        self,
+        n_seats: NumberOfSeats,
+        location: TableLocation,
+    ) -> None:
         super().__init__()
         self.__n_seats: NumberOfSeats = n_seats
         self.__location: TableLocation = location
         self.__orders: list[Order] = [Order() for _ in range(n_seats)]
+
+    @property
+    def orders(self) -> Sequence[Order]:
+        return self.__orders
 
     @property
     def n_seats(self) -> NumberOfSeats:
@@ -30,3 +39,8 @@ class Table(Model):
 
     def order_for(self, seat: int) -> Order:
         return self.__orders[seat]
+
+    def clear_orders(self) -> None:
+        for order in self.__orders:
+            order.clear()
+        self.notify_views()

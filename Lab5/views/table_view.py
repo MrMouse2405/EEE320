@@ -5,6 +5,7 @@ Author: OCdt Syed, OCdt Pabon-Gonzalez
 
 """
 
+from functools import partial
 from typing import override
 from tkinter import ALL, Canvas, Frame
 from constants import (
@@ -26,7 +27,6 @@ class TableView(View[TableController, Table]):
     @override
     def create_ui(self) -> None:
         print("create table ui")
-        self.grid()
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -40,6 +40,7 @@ class TableView(View[TableController, Table]):
 
     @override
     def refresh(self) -> None:
+        print("refresh table ui")
         self.__canvas.delete(ALL)
         self.create_table_ui(self.model)
 
@@ -52,16 +53,31 @@ class TableView(View[TableController, Table]):
             def handler(_, seat_number=ix):
                 self.controller.seat_touched(seat_number)
 
-            self.__canvas.tag_bind(seat_id, "<Button-1>", handler)
+            _ = self.__canvas.tag_bind(seat_id, "<Button-1>", handler)
+
         make_button(
             canvas=self.__canvas,
             text="Done",
-            action=lambda event: self.controller.done(),
+            action=lambda _: self.controller.done(),
         )
+
         if table.has_any_active_orders():
-            make_button(
-                canvas=self.__canvas,
-                text="Create Bills",
-                action=lambda event: self.controller.make_bills(),
-                location=GET_BUTTON_BOTTOM_LEFT(SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT),
+            BUTTON_SPACING = 40
+
+            base_x, base_y = GET_BUTTON_BOTTOM_LEFT(
+                SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT
             )
+
+            for i, (label, handler) in enumerate(
+                [
+                    ("Custom Bill", self.controller.bill_custom),
+                    ("Bill Table", self.controller.bill_table),
+                    ("Bill Seats", self.controller.bill_seats),
+                ]
+            ):
+                make_button(
+                    canvas=self.__canvas,
+                    text=label,
+                    action=partial(lambda f, _evt=None: f(), handler),
+                    location=(base_x, base_y - i * BUTTON_SPACING),
+                )

@@ -14,9 +14,9 @@ route between different views on same window.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from typing import Generic, override, TypeVar
-from tkinter import Frame, Frame
+from tkinter import Frame
 
 """
 
@@ -124,7 +124,8 @@ class Model(ABC, ModelInterface):
         return self.__views
 
     def add_views(self, view: ViewInterface) -> None:
-        self.__views.append(view)
+        if view not in self.__views:
+            self.__views.append(view)
 
     def notify_views(self) -> None:
         for view in self.__views:
@@ -137,7 +138,7 @@ class Controller(ABC, Generic[VT, MT], ControllerInterface):
         self.__view: VT = view
         self.__model: MT = model
         self.__navigation: ViewRouter = navigation
-        model.add_views(view)
+        view.controller = self
         view.create_ui()
 
     @property
@@ -170,7 +171,7 @@ class Controller(ABC, Generic[VT, MT], ControllerInterface):
 
 class MVCFactoryInterface:
     @abstractmethod
-    def create(self, parent: Frame) -> VT: ...
+    def create(self, parent: Frame, payload: MT) -> VT: ...
     @abstractmethod
     def on_show(self, view: VT) -> None: ...
 
@@ -202,15 +203,15 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
     def build_controller(self, view: VT, model: MT, navigation: ViewRouter) -> CT: ...
 
     @override
-    def create(self, parent: Frame) -> VT:
+    def create(self, parent: Frame, payload: MT) -> VT:
         if self._cached:
             return self._view
-        self._model = self.build_model()
+        self._model = payload or self.build_model()
         self._view = self.build_view(parent, self._model)
         self._controller = self.build_controller(
             self._view, self._model, self._navigation
         )
-        self._view.controller = self._controller
+        self._cached = True
         return self._view
 
     @override
@@ -225,22 +226,26 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
 
 class ViewRouter:
     def __init__(self, container: Frame, width: int, height: int) -> None:
-        self.container = container
-        self.width = width
-        self.height = height
+        self.container: Frame = container
+        self.width: int = width
+        self.height: int = height
         self._factories: dict[str, MVCFactoryInterface] = {}
         self._current_name: str | None = None
         self._current_view: Frame | None = None
-        self._animating = False
+        self._animating: bool = False
         self._back_stack: list[str] = []
         self._fwd_stack: list[str] = []
 
     def register(self, name: str, factory: MVCFactoryInterface) -> None:
         self._factories[name] = factory
 
-    @override
     def goto(
-        self, name: str, *, direction: str = "left", record_history: bool = True
+        self,
+        name: str,
+        *,
+        direction: str = "left",
+        record_history: bool = True,
+        payload=None,
     ) -> None:
         if self._animating:
             return
@@ -248,7 +253,7 @@ class ViewRouter:
         if factory is None:
             raise KeyError(f"View '{name}' not registered")
 
-        new_view = factory.create(self.container)
+        new_view = factory.create(self.container, payload)
         old_view = self._current_view
 
         # history bookkeeping
@@ -295,7 +300,6 @@ class ViewRouter:
     def can_go_forward(self) -> bool:
         return bool(self._fwd_stack)
 
-    @override
     def go_back(self) -> None:
         if not self._back_stack or self._current_name is None:
             return
@@ -303,7 +307,6 @@ class ViewRouter:
         self._fwd_stack.append(self._current_name)
         self.goto(target, direction="right", record_history=False)
 
-    @override
     def go_forward(self) -> None:
         if not self._fwd_stack or self._current_name is None:
             return
@@ -323,14 +326,14 @@ ID = TypeVar("ID")
 
 class ReadRepository(ABC, Generic[T_co, ID]):
     @abstractmethod
-    def get_all(self) -> Sequence[T_co]: ...
+    def get_all(self) -> Generator[T_co, None, None]: ...
     @abstractmethod
     def get_by_id(self, id: ID) -> T_co | None: ...
 
 
 class WriteRepository(ABC, Generic[T, ID]):
     @abstractmethod
-    def create(self, item: T) -> ID | None: ...
+    def create(self, item: T) -> ID: ...
     @abstractmethod
     def update(self, id: ID, item: T) -> None: ...
     @abstractmethod

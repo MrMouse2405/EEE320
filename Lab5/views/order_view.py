@@ -23,11 +23,7 @@ from constants import (
 from controllers import OrderController
 from models import Order
 from mvc import View
-from repositories import MenuItemRepository
 from views.utils import make_button
-
-
-menu_items_repository = MenuItemRepository()
 
 
 class OrderView(View[OrderController, Order]):
@@ -37,7 +33,6 @@ class OrderView(View[OrderController, Order]):
     @override
     def create_ui(self) -> None:
         print("create order ui")
-        self.grid()
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -54,7 +49,7 @@ class OrderView(View[OrderController, Order]):
         self.create_order_ui()
 
     def create_order_ui(self):
-        for ix, item in enumerate(menu_items_repository.get_all()):
+        for ix, item in enumerate(self.model.menu_items):
             w, h, margin = MENU_ITEM_SIZE
             x0 = margin
             y0 = margin + (h + margin) * ix

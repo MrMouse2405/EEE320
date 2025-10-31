@@ -24,10 +24,9 @@ from constants import (
     SERVER_VIEW_WIDTH,
 )
 
-from repositories.BillsRepository import BillsRepository
+
 from views.utils import make_button
 
-bills_repository = BillsRepository()
 
 class BillView(View[BillController, Bill]):
     def __init__(self, root: Frame, model: Bill) -> None:
@@ -36,7 +35,6 @@ class BillView(View[BillController, Bill]):
     @override
     def create_ui(self) -> None:
         print("create_ui")
-        self.grid()
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -52,13 +50,4 @@ class BillView(View[BillController, Bill]):
         self.__canvas.delete(ALL)
         self.create_bill_ui()
 
-    def create_bill_ui(self) -> None:
-        for ix, item in enumerate(bills_repository.get_all()):
-            w, h, margin = MENU_ITEM_SIZE
-            x0 = margin
-            y0 = margin + (h + margin) * ix
-
-            def handler(_, menuitem=item):
-                self.controller.add_item(menuitem)
-
-            make_button(self.__canvas, item.name, handler, (w, h), (x0, y0))
+    def create_bill_ui(self) -> None: ...

@@ -1,13 +1,20 @@
 from collections.abc import Sequence
-from models import MenuItem, Table
+
+from constants import MENU_ITEMS, TABLES
+from .menu_item import MenuItem
+from .table import Table
 from mvc import Model
 
 
 class Restaurant(Model):
-    def __init__(self, tables: Sequence[Table], menu_items: Sequence[MenuItem]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.__tables: Sequence[Table] = tables
-        self.__menu_items: Sequence[MenuItem] = menu_items
+        self.__tables: Sequence[Table] = [
+            Table(seats, location) for seats, location in TABLES
+        ]
+        self.__menu_items: Sequence[MenuItem] = [
+            MenuItem(name=item[0], price=item[1]) for item in MENU_ITEMS
+        ]
 
     @property
     def tables(self) -> Sequence[Table]:

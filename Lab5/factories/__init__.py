@@ -6,9 +6,14 @@ Author: OCdt Syed, OCdt Pabon-Gonzalez
 Exports classes for the package
 """
 
-from .ServerViewFactory import ServerViewFactory
-from .TableViewFactory import TableViewFactory
-from .BillViewFactory import BillViewFactory
-from .OrderViewFactory import OrderViewFactory
+from .server_view_factory import ServerViewFactory
+from .table_view_factory import TableViewFactory
+from .bill_view_factory import BillViewFactory
+from .order_view_factory import OrderViewFactory
 
-__all__ = ["ServerViewFactory", "TableViewFactory", "BillViewFactory", "OrderViewFactory"]
+__all__ = [
+    "ServerViewFactory",
+    "TableViewFactory",
+    "BillViewFactory",
+    "OrderViewFactory",
+]

@@ -1,10 +1,11 @@
-from .MenuItem import MenuItem
-from .OrderItem import OrderItem, OrderState
-from .Order import Order
-from .Table import Table
-from .Restaurant import Restaurant
-from .Bill import Bill
-from .Printer import Printer
+from .menu_item import MenuItem
+from .order_item import OrderItem, OrderState
+from .order import Order
+from .table import Table
+from .restaurant import Restaurant
+from .bill import Bill, BillOrderSet
+from .log import Log
+from .printer import Printer
 
 __all__ = [
     "MenuItem",
@@ -15,4 +16,6 @@ __all__ = [
     "Restaurant",
     "Bill",
     "Printer",
+    "BillOrderSet",
+    "Log",
 ]

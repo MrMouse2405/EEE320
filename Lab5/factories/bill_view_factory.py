@@ -1,22 +1,19 @@
 from tkinter import Frame
 from typing import override
 
-from controllers.BillController import BillController
+from controllers import BillController
 from models import Bill
 from mvc import MVCFactory, ViewRouter
-from repositories.BillsRepository import BillsRepository
 from views import BillView
 
-__bill_repository = BillsRepository()
 
 class BillViewFactory(MVCFactory[BillView, Bill, BillController]):
-    def __init__(self, model: Bill, navigation: ViewRouter):
+    def __init__(self, navigation: ViewRouter):
         super().__init__(navigation)
-        self._model: Bill = model
 
     @override
     def build_model(self) -> Bill:
-        return self._model
+        raise Exception("Requires Bill Payload!")
 
     @override
     def build_view(self, parent: Frame, model: Bill) -> BillView:

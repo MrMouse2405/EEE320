@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from mvc import Model
-from .MenuItem import MenuItem
+from .menu_item import MenuItem
 
 
 class OrderState(Enum):
