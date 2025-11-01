@@ -1,15 +1,32 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+OrderItem:
+    Represents individual menu items within an order.
+    Tracks the item’s state (requested, placed, or billed).
+"""
+
 from enum import Enum, auto
 from mvc import Model
 from .menu_item import MenuItem
 
 
 class OrderState(Enum):
+    """Defines possible states for an order item."""
+
     REQUESTED = auto()
     PLACED = auto()
     BILLED = auto()
 
 
 class OrderItem(Model):
+    """
+    Represents a single menu item in an order.
+    Manages its state and provides status transitions.
+    """
+
     def __init__(self, menu_item: MenuItem) -> None:
         super().__init__()
         self.__details: MenuItem = menu_item

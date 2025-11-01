@@ -1,12 +1,26 @@
-from collections.abc import Sequence
+"""
+EEE320 Object Oriented Programming Lab 5
 
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+Restaurant:
+    Central model for restaurant state.
+    Stores tables and menu items used throughout the system.
+"""
+
+from collections.abc import Sequence
+from mvc import Model
 from constants import MENU_ITEMS, TABLES
 from .menu_item import MenuItem
 from .table import Table
-from mvc import Model
 
 
 class Restaurant(Model):
+    """
+    Represents the restaurant’s core model.
+    Holds all tables and menu items available in the system.
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.__tables: Sequence[Table] = [

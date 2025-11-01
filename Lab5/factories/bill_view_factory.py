@@ -1,3 +1,12 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+BillViewFactory:
+    Factory for constructing MVC components for displaying a single bill.
+"""
+
 from tkinter import Frame
 from typing import override
 
@@ -8,7 +17,11 @@ from views import BillView
 
 
 class BillViewFactory(MVCFactory[BillView, Bill, BillController]):
-    def __init__(self, navigation: ViewRouter):
+    """
+    Builds and links the model, view, and controller for a bill view.
+    """
+
+    def __init__(self, navigation: ViewRouter) -> None:
         super().__init__(navigation)
 
     @override

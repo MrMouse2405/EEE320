@@ -1,3 +1,13 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+Table:
+    Represents a table in the restaurant with its location,
+    number of seats, and active seat orders.
+"""
+
 from collections.abc import Sequence
 from mvc import Model
 from constants import NumberOfSeats, TableLocation
@@ -5,6 +15,11 @@ from .order import Order
 
 
 class Table(Model):
+    """
+    Represents a restaurant table with multiple seat orders.
+    Each seat maintains an independent order instance.
+    """
+
     def __init__(
         self,
         n_seats: NumberOfSeats,

@@ -3,17 +3,24 @@ EEE320 Object Oriented Programming Lab 5
 
 Author: OCdt Syed, OCdt Pabon-Gonzalez
 
+PrinterView:
+    Scrollable list of saved bills with per-bill action buttons.
 """
 
 from typing import override
 from tkinter import Button, Canvas, Frame, Scrollbar
-from constants import SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
-from models import Printer
+
+from constants import PRINTER_VIEW_HEIGHT, PRINTER_VIEW_WIDTH
 from controllers import PrinterController
+from models import Printer
 from mvc import View
 
 
 class PrinterView(View[PrinterController, Printer]):
+    """
+    Renders a scrollable list of existing bills and forwards selections to the controller.
+    """
+
     def __init__(self, root: Frame, model: Printer) -> None:
         super().__init__(root, model)
         self._canvas: Canvas
@@ -23,15 +30,14 @@ class PrinterView(View[PrinterController, Printer]):
 
     @override
     def create_ui(self) -> None:
-        print("create printer ui")
         _ = self.grid_rowconfigure(0, weight=1)
         _ = self.grid_columnconfigure(0, weight=1)
 
         # Scrollable area
         self._canvas = Canvas(
             self,
-            width=SERVER_VIEW_WIDTH,
-            height=SERVER_VIEW_HEIGHT,
+            width=PRINTER_VIEW_WIDTH,
+            height=PRINTER_VIEW_HEIGHT,
             borderwidth=0,
             highlightthickness=0,
         )
@@ -48,12 +54,10 @@ class PrinterView(View[PrinterController, Printer]):
         )
 
         # Keep scrollregion and inner frame width in sync
-        def _on_frame_config(_):
-            assert self._canvas is not None
+        def _on_frame_config(_: object) -> None:
             _ = self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
-        def _on_canvas_config(event):
-            assert self._canvas is not None and self._list_win_id is not None
+        def _on_canvas_config(event) -> None:
             _ = self._canvas.itemconfigure(self._list_win_id, width=event.width)
 
         _ = self._list_frame.bind("<Configure>", _on_frame_config)
@@ -67,7 +71,6 @@ class PrinterView(View[PrinterController, Printer]):
 
     @override
     def refresh(self) -> None:
-        print("refresh printer view")
         if not self._list_frame:
             return
 
@@ -75,7 +78,7 @@ class PrinterView(View[PrinterController, Printer]):
         for w in self._list_frame.winfo_children():
             w.destroy()
 
-        # IMPORTANT: materialize the generator once
+        # Materialize the generator
         bills = list(self.model.bills)
 
         # Add one button per bill

@@ -1,14 +1,30 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+Order:
+    Handles ordered items and menu selections.
+    Supports adding, removing, and placing customer orders.
+"""
+
 from __future__ import annotations
+
 from collections.abc import Generator, Sequence
 from typing import Literal
 
 from constants import MENU_ITEMS
 from mvc import Model
-from .order_item import OrderItem
 from .menu_item import MenuItem
+from .order_item import OrderItem
 
 
 class Order(Model):
+    """
+    Represents a customer's active order.
+    Manages menu items, requested orders, and placement status.
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.__items: list[OrderItem] = []
@@ -27,7 +43,7 @@ class Order(Model):
 
     @property
     def total_cost(self) -> float | Literal["0"]:
-        return sum((item.details.price for item in self.__items))
+        return sum(item.details.price for item in self.__items)
 
     def add_item(self, menu_item: MenuItem) -> None:
         self.__items.append(OrderItem(menu_item))
@@ -42,8 +58,8 @@ class Order(Model):
             item.mark_as_placed()
         self.notify_views()
 
-    def remove_requested_item(self) -> None:
-        for item in self.requested_items:
+    def remove_requested_items(self) -> None:
+        for item in list(self.requested_items):
             self.__items.remove(item)
         self.notify_views()
 

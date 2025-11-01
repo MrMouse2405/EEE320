@@ -6,7 +6,7 @@ Author: OCdt Syed
 This file implemented generic base classes for model,
 view, controller, respository, and MVCFactory (for router).
 
-This file also implements the router file which is used to
+This file also implements the router which is used to
 route between different views on same window.
 
 """
@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Sequence
-from typing import Generic, override, TypeVar
 from tkinter import Frame
+from typing import Generic, TypeVar, override
 
 """
 
 Interfaces are not needed, they are purely
-implemented to avoid recursive types and have a sound
+implemented to avoid recursive types and have sound
 typed code.
 
 Base classes are what should be used.
@@ -33,7 +33,7 @@ Base classes are what should be used.
 """
 
 # ------------------------------------------------------------
-# Interfaces used as *non-parameterized* bounds for TypeVars
+# Interfaces used as non-parameterized bounds for TypeVars
 # (Pyright doesn't allow parameterized generics in TypeVar.bound)
 # ------------------------------------------------------------
 
@@ -41,80 +41,44 @@ Base classes are what should be used.
 class ViewInterface:
     def create_ui(self) -> None: ...
     def refresh(self) -> None: ...
+
     @property
     def controller(self) -> ControllerInterface: ...
+
     @controller.setter
     def controller(self, c: ControllerInterface) -> None: ...
+
     @property
-    def model(self) -> ModelInterface: ...
+    def model(self) -> Model: ...
+
     @model.setter
-    def model(self, m: ModelInterface) -> None: ...
-
-
-class ModelInterface:
-    @property
-    def views(self) -> Sequence[ViewInterface]: ...
-    def add_views(self, view: ViewInterface) -> None: ...
-    def notify_views(self) -> None: ...
+    def model(self, m: Model) -> None: ...
 
 
 class ControllerInterface:
     @property
     def view(self) -> ViewInterface: ...
+
     @property
-    def model(self) -> ModelInterface: ...
+    def model(self) -> Model: ...
 
 
-class ViewRouter:
-    def goto(
-        self, name: str, *, direction: str = "left", record_history: bool = True
-    ) -> None: ...
-    def go_back(self) -> None: ...
-    def go_forward(self) -> None: ...
+class MVCFactoryInterface:
+    def create(self, parent: Frame, payload: MT | None) -> VT: ...
+    def on_show(self, view: VT) -> None: ...
 
 
 VT = TypeVar("VT", bound=ViewInterface)
-MT = TypeVar("MT", bound=ModelInterface)
+MT = TypeVar("MT", bound="Model")
 CT = TypeVar("CT", bound=ControllerInterface)
+FT = TypeVar("FT", bound=MVCFactoryInterface)
 
 # ------------------------------------------------------------
-# Concrete generic classes you will subclass
-# We keep them generic, but we don't use parameterized bounds on TypeVars.
+# Concrete generic base classes for subclassing
 # ------------------------------------------------------------
 
 
-class View(ABC, Frame, Generic[CT, MT], ViewInterface):
-    def __init__(self, root: Frame, model: MT) -> None:
-        super().__init__(master=root)
-        self.__controller: CT  # set later via the property
-        self.__model: MT = model
-        model.add_views(self)
-
-    @property
-    def controller(self) -> CT:
-        return self.__controller
-
-    @controller.setter
-    def controller(self, c: CT) -> None:
-        self.__controller = c
-
-    @property
-    def model(self) -> MT:
-        return self.__model
-
-    @model.setter
-    def model(self, m: MT) -> None:
-        self.model = m
-        m.add_views(self)
-
-    @abstractmethod
-    def create_ui(self) -> None: ...
-
-    @abstractmethod
-    def refresh(self) -> None: ...
-
-
-class Model(ABC, ModelInterface):
+class Model(ABC):
     def __init__(self) -> None:
         super().__init__()
         self.__views: list[ViewInterface] = []
@@ -132,8 +96,39 @@ class Model(ABC, ModelInterface):
             view.refresh()
 
 
+class View(ABC, Frame, Generic[CT, MT], ViewInterface):
+    def __init__(self, root: Frame, model: MT) -> None:
+        super().__init__(master=root)
+        self.__controller: CT  # set later via property
+        self.__model: MT = model
+        model.add_views(self)
+
+    @property
+    def controller(self) -> CT:
+        return self.__controller
+
+    @controller.setter
+    def controller(self, c: CT) -> None:
+        self.__controller = c
+
+    @property
+    def model(self) -> MT:
+        return self.__model
+
+    @model.setter
+    def model(self, m: MT) -> None:
+        self.__model = m
+        m.add_views(self)
+
+    @abstractmethod
+    def create_ui(self) -> None: ...
+
+    @abstractmethod
+    def refresh(self) -> None: ...
+
+
 class Controller(ABC, Generic[VT, MT], ControllerInterface):
-    def __init__(self, view: VT, model: MT, navigation: ViewRouter) -> None:
+    def __init__(self, view: VT, model: MT, navigation: "ViewRouter") -> None:
         super().__init__()
         self.__view: VT = view
         self.__model: MT = model
@@ -165,26 +160,17 @@ class Controller(ABC, Generic[VT, MT], ControllerInterface):
 
 
 # ------------------------------------------------------------
-# Factory for building MVC pairs
+# Factory for building MVC trios
 # ------------------------------------------------------------
-
-
-class MVCFactoryInterface:
-    @abstractmethod
-    def create(self, parent: Frame, payload: MT | None) -> VT: ...
-    @abstractmethod
-    def on_show(self, view: VT) -> None: ...
-
-
-FT = TypeVar("FT", bound=MVCFactoryInterface)
 
 
 class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
     """
     Builder-based factory:
-      - build_model(): MT
-      - build_view(parent, model): VT
-      - build_controller(view, model): CT
+      - build_model() -> MT
+      - build_view(parent, model) -> VT
+      - build_controller(view, model, navigation) -> CT
+
     Caches the created trio if cache=True.
     """
 
@@ -197,8 +183,10 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
 
     @abstractmethod
     def build_model(self) -> MT: ...
+
     @abstractmethod
     def build_view(self, parent: Frame, model: MT) -> VT: ...
+
     @abstractmethod
     def build_controller(self, view: VT, model: MT, navigation: ViewRouter) -> CT: ...
 
@@ -249,6 +237,7 @@ class ViewRouter:
     ) -> None:
         if self._animating:
             return
+
         factory = self._factories.get(name)
         if factory is None:
             raise KeyError(f"View '{name}' not registered")
@@ -256,12 +245,12 @@ class ViewRouter:
         new_view = factory.create(self.container, payload)
         old_view = self._current_view
 
-        # history bookkeeping
+        # history
         if record_history and self._current_name is not None:
             self._back_stack.append(self._current_name)
             self._fwd_stack.clear()
 
-        # prepare positions
+        # positions
         start_x = self.width if direction == "left" else -self.width
         dx = -24 if direction == "left" else 24
         frames = max(1, (abs(start_x) // abs(dx)) + 2)
@@ -293,7 +282,7 @@ class ViewRouter:
 
         step(frames)
 
-    # Back/forward behavior (per-window)
+    # Back/forward per-window
     def can_go_back(self) -> bool:
         return bool(self._back_stack)
 
@@ -327,6 +316,7 @@ ID = TypeVar("ID")
 class ReadRepository(ABC, Generic[T_co, ID]):
     @abstractmethod
     def get_all(self) -> Generator[T_co, None, None]: ...
+
     @abstractmethod
     def get_by_id(self, id: ID) -> T_co | None: ...
 
@@ -334,7 +324,9 @@ class ReadRepository(ABC, Generic[T_co, ID]):
 class WriteRepository(ABC, Generic[T, ID]):
     @abstractmethod
     def create(self, item: T) -> ID: ...
+
     @abstractmethod
     def update(self, id: ID, item: T) -> None: ...
+
     @abstractmethod
     def delete(self, id: ID) -> None: ...

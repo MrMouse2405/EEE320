@@ -1,14 +1,29 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+BillView:
+    Scrollable bill view rendered on a Canvas with a vertical scrollbar.
+"""
+
 from __future__ import annotations
+
 import sys
 from tkinter import Button, Canvas, Frame, Scrollbar
 from typing import override
-from mvc import View
+
+from constants import SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
 from controllers import BillController
 from models import Bill
-from constants import SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
+from mvc import View
 
 
 class BillView(View[BillController, Bill]):
+    """
+    Renders a bill grouped by seat with totals and scrolling.
+    """
+
     def __init__(self, root: Frame, model: Bill) -> None:
         super().__init__(root, model)
         self.__canvas: Canvas

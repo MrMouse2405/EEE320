@@ -1,5 +1,15 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+OrderViewFactory:
+    Factory for constructing order-related MVC components.
+"""
+
 from tkinter import Frame
 from typing import override
+
 from controllers import OrderController
 from models import Order
 from mvc import MVCFactory, ViewRouter
@@ -7,7 +17,11 @@ from views import OrderView
 
 
 class OrderViewFactory(MVCFactory[OrderView, Order, OrderController]):
-    def __init__(self, navigation: ViewRouter):
+    """
+    Builds and connects the model, view, and controller for an order view.
+    """
+
+    def __init__(self, navigation: ViewRouter) -> None:
         super().__init__(navigation)
 
     @override

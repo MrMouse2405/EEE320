@@ -1,13 +1,27 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+BillController:
+    Handles user interactions on the bill view and navigation actions.
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models import Bill
+
 from mvc import Controller, ViewRouter
+from models import Bill
 
 if TYPE_CHECKING:
     from views import BillView
 
 
 class BillController(Controller["BillView", Bill]):
+    """
+    Manages bill confirmation and navigation back to the previous view.
+    """
+
     def __init__(self, view: "BillView", model: Bill, navigation: ViewRouter) -> None:
         super().__init__(view, model, navigation)
 

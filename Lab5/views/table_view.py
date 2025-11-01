@@ -3,11 +3,13 @@ EEE320 Object Oriented Programming Lab 5
 
 Author: OCdt Syed, OCdt Pabon-Gonzalez
 
+TableView:
+    Single-table view with seat selection and billing actions.
 """
 
-from functools import partial
 from typing import override
 from tkinter import ALL, Canvas, Frame
+
 from constants import (
     GET_BUTTON_BOTTOM_LEFT,
     SERVER_VIEW_HEIGHT,
@@ -21,12 +23,16 @@ from views.utils import draw_table, make_button
 
 
 class TableView(View[TableController, Table]):
+    """
+    Renders a single table with clickable seats and quick billing options.
+    """
+
     def __init__(self, root: Frame, model: Table) -> None:
         super().__init__(root, model)
+        self.__canvas: Canvas
 
     @override
     def create_ui(self) -> None:
-        print("create table ui")
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -36,21 +42,21 @@ class TableView(View[TableController, Table]):
         )
         self.__canvas.grid()
         self.__canvas.update()
-        self.create_table_ui(self.model)
+        self.create_table_ui()
 
     @override
     def refresh(self) -> None:
-        print("refresh table ui")
         self.__canvas.delete(ALL)
-        self.create_table_ui(self.model)
+        self.create_table_ui()
 
-    def create_table_ui(self, table: Table):
-        table_id, seat_ids = draw_table(
-            self.__canvas, table, location=SINGLE_TABLE_LOCATION
+    def create_table_ui(self) -> None:
+        _, seat_ids = draw_table(
+            self.__canvas, self.model, location=SINGLE_TABLE_LOCATION
         )
+
         for ix, seat_id in enumerate(seat_ids):
 
-            def handler(_, seat_number=ix):
+            def handler(_, seat_number=ix) -> None:
                 self.controller.seat_touched(seat_number)
 
             _ = self.__canvas.tag_bind(seat_id, "<Button-1>", handler)
@@ -61,23 +67,22 @@ class TableView(View[TableController, Table]):
             action=lambda _: self.controller.done(),
         )
 
-        if table.has_any_active_orders():
-            BUTTON_SPACING = 40
-
+        if self.model.has_any_active_orders():
+            button_spacing = 40
             base_x, base_y = GET_BUTTON_BOTTOM_LEFT(
                 SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT
             )
 
-            for i, (label, handler) in enumerate(
-                [
-                    ("Custom Bill", self.controller.bill_custom),
-                    ("Bill Table", self.controller.bill_table),
-                    ("Bill Seats", self.controller.bill_seats),
-                ]
-            ):
+            actions = [
+                ("Custom Bill", self.controller.bill_custom),
+                ("Bill Table", self.controller.bill_table),
+                ("Bill Seats", self.controller.bill_seats),
+            ]
+
+            for i, (label, func) in enumerate(actions):
                 make_button(
                     canvas=self.__canvas,
                     text=label,
-                    action=partial(lambda f, _evt=None: f(), handler),
-                    location=(base_x, base_y - i * BUTTON_SPACING),
+                    action=lambda _evt, f=func: f(),
+                    location=(base_x, base_y - i * button_spacing),
                 )

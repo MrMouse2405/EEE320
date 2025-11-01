@@ -2,32 +2,36 @@
 EEE320 Object Oriented Programming Lab 5
 
 Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+ServerView:
+    Top-level floor view showing all tables with clickable hit targets.
 """
 
-from tkinter import ALL, Frame, Canvas
+from tkinter import ALL, Canvas, Frame
 from typing import override
 from collections.abc import Sequence
+
+from constants import RESTAURANT_SCALE, SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
 from controllers import ServerController
+from models import Table
 from models.restaurant import Restaurant
 from mvc import View
-from models import Table
-from constants import (
-    SERVER_VIEW_HEIGHT,
-    SERVER_VIEW_WIDTH,
-    RESTAURANT_SCALE,
-)
 from views.utils import draw_table
 
 
 class ServerView(View[ServerController, Restaurant]):
+    """
+    Renders the restaurant layout and forwards table/seat clicks to the controller.
+    """
+
     def __init__(self, root: Frame, model: Restaurant) -> None:
         super().__init__(root, model)
-        self.__Frame: Frame = root
+        self.__Frame: Frame = root  # kept as-is if referenced elsewhere
         self.__animating: bool = False
+        self.__canvas: Canvas
 
     @override
     def create_ui(self) -> None:
-        print("create server ui")
         self.__canvas = Canvas(
             master=self,
             width=SERVER_VIEW_WIDTH,
@@ -41,7 +45,6 @@ class ServerView(View[ServerController, Restaurant]):
 
     @override
     def refresh(self) -> None:
-        print("refresh server ui")
         self.__canvas.delete(ALL)
         self.create_restaurant_ui()
 
@@ -54,16 +57,15 @@ class ServerView(View[ServerController, Restaurant]):
                 self.__canvas, table, scale=RESTAURANT_SCALE
             )
             view_ids.append((table_id, seat_ids))
+
             # Tag everything that belongs to the scene
             self.__canvas.addtag_withtag(tag, table_id)
             for sid in seat_ids:
                 self.__canvas.addtag_withtag(tag, sid)
 
         for ix, (table_id, seat_ids) in enumerate(view_ids):
-            # §54.7 "extra arguments trick" in Tkinter 8.5 reference by Shipman
-            # Used to capture current value of ix as table_index for use when
-            # handler is called (i.e., when screen is clicked).
-            def table_touch_handler(_, table_number: int = ix):
+            # Capture current ix for the handler
+            def table_touch_handler(_, table_number: int = ix) -> None:
                 _ = self.controller.on_table_touch(table_number)
 
             _ = self.__canvas.tag_bind(table_id, "<Button-1>", table_touch_handler)

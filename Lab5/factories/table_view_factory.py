@@ -1,5 +1,15 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+TableViewFactory:
+    Factory for constructing table-specific MVC components.
+"""
+
 from tkinter import Frame
 from typing import override
+
 from controllers import TableController
 from models import Table
 from mvc import MVCFactory, ViewRouter
@@ -7,7 +17,11 @@ from views import TableView
 
 
 class TableViewFactory(MVCFactory[TableView, Table, TableController]):
-    def __init__(self, navigation: ViewRouter):
+    """
+    Builds and links the model, view, and controller for a single table view.
+    """
+
+    def __init__(self, navigation: ViewRouter) -> None:
         super().__init__(navigation)
 
     @override

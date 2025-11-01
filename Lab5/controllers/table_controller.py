@@ -1,27 +1,37 @@
+"""
+EEE320 Object Oriented Programming Lab 5
+
+Author: OCdt Syed, OCdt Pabon-Gonzalez
+
+TableController:
+    Handles seat interactions and billing operations for a single table.
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models import Bill, BillOrderSet, Table
 
 from mvc import Controller, ViewRouter
-
+from models import Bill, BillOrderSet, CustomBill, Table
 
 if TYPE_CHECKING:
     from views import TableView
 
 
 class TableController(Controller["TableView", Table]):
+    """
+    Manages seat selection, billing actions, and navigation for table interactions.
+    """
+
     def __init__(self, view: "TableView", model: Table, navigation: ViewRouter) -> None:
         super().__init__(view, model, navigation)
 
-    def seat_touched(self, seat_number: int):
-        print("seat touched:", seat_number)
+    def seat_touched(self, seat_number: int) -> None:
         self.navigation.goto("order", payload=self.model.order_for(seat_number))
 
-    def done(self):
+    def done(self) -> None:
         self.navigation.go_back()
 
     def bill_table(self) -> None:
-        print("bill table")
         Bill(
             order_sets=[
                 BillOrderSet(
@@ -36,7 +46,6 @@ class TableController(Controller["TableView", Table]):
         self.navigation.go_back()
 
     def bill_seats(self) -> None:
-        print("bill seats")
         for seat_number, order in enumerate(self.model.orders):
             if order.items:
                 bill_order_set = BillOrderSet(
@@ -50,4 +59,4 @@ class TableController(Controller["TableView", Table]):
         self.navigation.go_back()
 
     def bill_custom(self) -> None:
-        print("bill custom")
+        self.navigation.goto(name="custom_bill", payload=CustomBill(self.model))
