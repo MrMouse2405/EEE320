@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from uuid import UUID
 from models import Printer
 from mvc import Controller, ViewRouter
 
@@ -13,5 +14,5 @@ class PrinterController(Controller["PrinterView", Printer]):
     ) -> None:
         super().__init__(view, model, navigation)
 
-    def on_table_touch(self, table_number: int) -> None:
-        print(table_number, "clicked!")
+    def on_bill_touched(self, bill_id: UUID) -> None:
+        self.navigation.goto(name="bill", payload=self.model.get_bill_by_id(bill_id))

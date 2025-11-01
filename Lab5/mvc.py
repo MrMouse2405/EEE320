@@ -171,7 +171,7 @@ class Controller(ABC, Generic[VT, MT], ControllerInterface):
 
 class MVCFactoryInterface:
     @abstractmethod
-    def create(self, parent: Frame, payload: MT) -> VT: ...
+    def create(self, parent: Frame, payload: MT | None) -> VT: ...
     @abstractmethod
     def on_show(self, view: VT) -> None: ...
 
@@ -203,8 +203,8 @@ class MVCFactory(ABC, Generic[VT, MT, CT], MVCFactoryInterface):
     def build_controller(self, view: VT, model: MT, navigation: ViewRouter) -> CT: ...
 
     @override
-    def create(self, parent: Frame, payload: MT) -> VT:
-        if self._cached:
+    def create(self, parent: Frame, payload: MT | None) -> VT:
+        if not payload and self._cached:
             return self._view
         self._model = payload or self.build_model()
         self._view = self.build_view(parent, self._model)
@@ -245,7 +245,7 @@ class ViewRouter:
         *,
         direction: str = "left",
         record_history: bool = True,
-        payload=None,
+        payload: MT | None = None,
     ) -> None:
         if self._animating:
             return

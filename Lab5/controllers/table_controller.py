@@ -38,14 +38,14 @@ class TableController(Controller["TableView", Table]):
     def bill_seats(self) -> None:
         print("bill seats")
         for seat_number, order in enumerate(self.model.orders):
-            bill_order_set = BillOrderSet(
-                table_location=self.model.location,
-                seat_number=seat_number,
-                items=[item.details for item in order.items],
-            )
-
-            bill = Bill([bill_order_set])
-            bill.save()
+            if order.items:
+                bill_order_set = BillOrderSet(
+                    table_location=self.model.location,
+                    seat_number=seat_number,
+                    items=[item.details for item in order.items],
+                )
+                bill = Bill([bill_order_set])
+                bill.save()
         self.model.clear_orders()
         self.navigation.go_back()
 

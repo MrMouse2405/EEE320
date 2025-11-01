@@ -4,7 +4,6 @@ from .order import Order
 from .table import Table
 from .restaurant import Restaurant
 from .bill import Bill, BillOrderSet
-from .log import Log
 from .printer import Printer
 
 __all__ = [

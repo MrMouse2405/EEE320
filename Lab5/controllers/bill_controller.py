@@ -10,3 +10,6 @@ if TYPE_CHECKING:
 class BillController(Controller["BillView", Bill]):
     def __init__(self, view: "BillView", model: Bill, navigation: ViewRouter) -> None:
         super().__init__(view, model, navigation)
+
+    def done(self) -> None:
+        self.navigation.go_back()

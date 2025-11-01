@@ -8,7 +8,13 @@ Author: OCdt Syed, OCdt Pabon-Gonzalez
 from __future__ import annotations
 from tkinter import Tk, Frame, Toplevel
 from constants import SERVER_VIEW_HEIGHT, SERVER_VIEW_WIDTH
-from factories import OrderViewFactory, ServerViewFactory, TableViewFactory
+from factories import (
+    BillViewFactory,
+    OrderViewFactory,
+    ServerViewFactory,
+    TableViewFactory,
+    PrinterViewFactory,
+)
 from mvc import ViewRouter
 
 
@@ -60,8 +66,9 @@ class App(Tk):
         self.printer_router: ViewRouter = ViewRouter(
             self.printer_container, SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT
         )
-        self.printer_router.register("server", ServerViewFactory(self.printer_router))
-        self.printer_router.goto("server")
+        self.printer_router.register("printer", PrinterViewFactory(self.printer_router))
+        self.printer_router.register("bill", BillViewFactory(self.printer_router))
+        self.printer_router.goto("printer")
 
 
 if __name__ == "__main__":

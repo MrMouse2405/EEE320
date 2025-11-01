@@ -63,11 +63,11 @@ class OrderView(View[OrderController, Order]):
         make_button(
             self.__canvas,
             "Cancel",
-            lambda event: self.controller.cancel_changes(),
+            lambda _: self.controller.cancel_changes(),
             location=GET_BUTTON_BOTTOM_LEFT(SERVER_VIEW_WIDTH, SERVER_VIEW_HEIGHT),
         )
         make_button(
-            self.__canvas, "Update Order", lambda event: self.controller.update_order()
+            self.__canvas, "Update Order", lambda _: self.controller.update_order()
         )
 
     def draw_order(self, order: Order):

@@ -8,7 +8,6 @@ from .menu_item import MenuItem
 from typing import Literal, override
 import uuid
 from collections.abc import Generator
-from typing import override
 from mvc import ReadRepository, WriteRepository
 
 BillsRepo: BillsRepository
@@ -31,7 +30,7 @@ class BillOrderSet:
         return self.__seat_number
 
     @property
-    def item(self) -> Sequence[MenuItem]:
+    def items(self) -> Sequence[MenuItem]:
         return self.__items
 
     @property
