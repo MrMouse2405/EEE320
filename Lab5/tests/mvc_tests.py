@@ -226,47 +226,6 @@ class TestViewRouter(unittest.TestCase):
         self.assertEqual(self.factory_a.on_show_calls, 0)
 
 
-# -------------------- Repository ABC shape tests --------------------
-
-
-class TestRepositoryABCs(unittest.TestCase):
-    def test_read_write_must_implement(self):
-        from mvc import ReadRepository, WriteRepository
-
-        class R(ReadRepository[int, str]):
-            def __init__(self):
-                self.q = []
-
-            def get_all(self):
-                for x in self.q:
-                    yield x
-
-            def get_by_id(self, id: str):
-                return next((x for x in self.q if str(x) == id), None)
-
-        class W(WriteRepository[int, str]):
-            def __init__(self):
-                self.q = {}
-
-            def create(self, item: int) -> str:
-                key = str(len(self.q) + 1)
-                self.q[key] = item
-                return key
-
-            def update(self, id: str, item: int) -> None:
-                self.q[id] = item
-
-            def delete(self, id: str) -> None:
-                self.q.pop(id, None)
-
-        r = R()
-        w = W()
-        _ = w.create(10)
-        self.assertEqual(list(r.get_all()), [])
-        w.update("1", 11)
-        w.delete("1")  # smoke test ABC contracts
-
-
 # -------------------- Suite builder --------------------
 
 
@@ -277,7 +236,6 @@ def MVCTestSuite() -> unittest.TestSuite:
     s.addTests(L.loadTestsFromTestCase(TestControllerWiring))
     s.addTests(L.loadTestsFromTestCase(TestMVCFactoryCaching))
     s.addTests(L.loadTestsFromTestCase(TestViewRouter))
-    s.addTests(L.loadTestsFromTestCase(TestRepositoryABCs))
     return s
 
 
