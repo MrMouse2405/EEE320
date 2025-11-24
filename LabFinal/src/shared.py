@@ -1,3 +1,14 @@
+from __future__ import annotations
+
+import math
+import random
+from abc import ABC, abstractmethod
+from enum import Enum
+from typing import Any, Self, override
+
+import numpy as np
+from numpy.typing import NDArray
+
 """
 This module contains classes which form part of the BugBattle
 system and which are used in the creation of competitor creatures.
@@ -7,7 +18,7 @@ attributes and methods as well as attributes and methods whose
 names start with `f_` or `F_`. These are reserved for game framework
 use.
 
-version 1.13
+version 1.13 (NumPy optimized)
 2021-11-23
 
 Python implementation: Greg Phillips
@@ -15,11 +26,40 @@ Based on an original design by Scott Knight and a series of
 implementations in C++ and Java by Scott Knight and Greg Phillips
 """
 
-import math
-import random
-from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Any
+"""
+
+    Direction
+
+"""
+
+
+class Direction(Enum):
+    N = (0, -1)
+    NE = (1, -1)
+    E = (1, 0)
+    SE = (1, 1)
+    S = (0, 1)
+    SW = (-1, 1)
+    W = (-1, 0)
+    NW = (-1, -1)
+
+    def __init__(self, dx: int, dy: int) -> None:
+        self.dx: int = dx
+        self.dy: int = dy
+
+    def opposite(self) -> Direction:
+        return Direction((-self.dx, -self.dy))
+
+    @classmethod
+    def random(cls) -> Direction:
+        return random.choice(list(cls))
+
+
+"""
+
+    World
+
+"""
 
 
 class World:
@@ -29,42 +69,49 @@ class World:
     of Soil.
     """
 
-    def __init__(self, width):
-        self.width = width
-        self.locations = []
+    def __init__(self, width: int) -> None:
+        self.width: int = width
+        # Use object dtype array for creature references
+        self.locations: NDArray[np.object_] = np.empty(width * width, dtype=object)
+        self._indices = np.arange(width * width, dtype=np.int32)
         self.reset()
 
-    def reset(self):
-        if self.locations:
+    def reset(self) -> None:
+        # Vectorized destruction
+        if len(self.locations) > 0:
             for location in self.locations:
-                location.destroyed()
-        self.locations = [None for _ in range(self.width * self.width)]
-        for index in range(len(self.locations)):
-            self.place(Soil(), index)
+                if location is not None:
+                    location.destroyed()
 
-    def place(self, creature, destination):
+        self.locations = np.empty(self.width * self.width, dtype=object)
+        for index in self._indices:
+            self.place(Soil(), index)  # type: ignore
+
+    def place(self, creature: Creature, destination: int) -> None:
         creature.f_set_location(destination)
         self.locations[destination] = creature
         creature.f_set_world(self)
 
-    def replace(self, original, replacement):
+    def replace(self, original: Creature, replacement: Creature) -> None:
         try:
             destination = self.location_of(original)
             self.place(replacement, destination)
         except ValueError:
             pass
 
-    def location_of(self, creature):
+    def location_of(self, creature: Creature) -> int:
         loc = creature.f_location()
         if self.locations[loc] == creature:
             return loc
         else:
             raise ValueError()
 
-    def creature_at(self, index):
+    def creature_at(self, index: int) -> Creature:
         return self.locations[index]
 
-    def creature_at_offset_from(self, creature, bearing):
+    def creature_at_offset_from(
+        self, creature: Creature, bearing: Direction
+    ) -> Creature:
         try:
             start = self.location_of(creature)
             target = self._location_offset(start, bearing)
@@ -72,7 +119,7 @@ class World:
         except ValueError:
             return Soil()
 
-    def do_turn(self):
+    def do_turn(self) -> None:
         """
         Executes the metabolic cycle for all creatures then permits each to
         do its turn.
@@ -83,16 +130,22 @@ class World:
         it could have moved into a location whose turn had not yet come up). So,
         we call do_turn over a copy of the locations list.
         """
+        # Metabolic cycle for all creatures
         for creature in self.locations:
             creature.f_metabolic_cycle()
-        for ix, creature in enumerate(self.locations[:]):
+
+        # Copy the array for iteration
+        creatures_snapshot = self.locations.copy()
+        for ix, creature in enumerate(creatures_snapshot):
             creature.do_turn()
             creature.f_cap_strength()
-        for creature in self.locations[:]:
+
+        # Replace dead creatures
+        for creature in self.locations.copy():
             if not creature.is_alive():
                 self.replace(creature, Soil())
 
-    def move(self, attacker, bearing):
+    def move(self, attacker: Creature, bearing: Direction) -> None:
         """
         If the creature is in the world, attempts to move it by attacking
         the location at the bearing from its initial location, back-filling
@@ -108,23 +161,32 @@ class World:
         self.place(Soil(), start)
         self.launch_attack(start, bearing, attacker)
 
-    def launch_attack(self, start, bearing, attacker):
-        battleground = self._location_offset(start, bearing)
-        winner = attacker.f_attack(self.locations[battleground])
+    def launch_attack(self, start: int, bearing: Direction, attacker: Creature) -> None:
+        battleground: int = self._location_offset(start, bearing)
+        winner: Creature = attacker.f_attack(self.locations[battleground])
         self.place(winner, battleground)
 
-    def drop_beside(self, origin_creature, dropped, bearing):
+    def drop_beside(
+        self, origin_creature: Creature, dropped: Creature, bearing: Direction
+    ) -> None:
         try:
             start = self.location_of(origin_creature)
             self.launch_attack(start, bearing, dropped)
         except ValueError:
             pass
 
-    def _location_offset(self, start, bearing):
+    def _location_offset(self, start: int, bearing: Direction) -> int:
         """Returns the start location offset by bearing, accounting for edge wrapping."""
         new_x = (start % self.width + bearing.dx) % self.width
         new_y = (start // self.width + bearing.dy) % self.width
         return new_y * self.width + new_x
+
+
+"""
+
+    Creature
+
+"""
 
 
 class Creature(ABC):
@@ -163,297 +225,294 @@ class Creature(ABC):
 
     """
 
-    __MAX_STRENGTH = MAX_STRENGTH = 2000
-    __MAINTENANCE_COST = MAINTENANCE_COST = 20
-    __MAX_ORGANS = MAX_ORGANS = 10
-    __DEAD_COLOUR = "black"
+    __MAX_STRENGTH: int = 2000
+    __MAINTENANCE_COST: int = 20
+    __MAX_ORGANS: int = 10
+    __DEAD_COLOUR: str = "black"
 
-    def __init__(self):
-        self.__world = None
-        self.__location = None
-        self.__alive = True
-        self.__strength = 0
-        self.__colour = None
-        self.__organs = []
-        self.__cloaked = False
-        self.__poisonous = False
+    MAX_STRENGTH = __MAX_STRENGTH
+    MAINTENANCE_COST = __MAINTENANCE_COST
+    MAX_ORGANS = __MAX_ORGANS
+    DEAD_COLOUR = __DEAD_COLOUR
 
-    @abstractmethod
-    def do_turn(self):
-        pass
-
-    @abstractmethod
-    def destroyed(self):
-        pass
+    def __init__(self) -> None:
+        self.__world: World | None = None
+        self.__location: int | None = None
+        self.__alive: bool = True
+        self.__strength: int = 0
+        self.__colour: str | None = None
+        self.__organs: list[Organ] = []
+        self.__cloaked: bool = False
+        self.__poisonous: bool = False
 
     @abstractmethod
-    def instance_count(self) -> int:
-        pass
+    def do_turn(self) -> None: ...
 
-    def strength(self):
+    @classmethod
+    @abstractmethod
+    def destroyed(cls) -> None: ...
+
+    @classmethod
+    @abstractmethod
+    def instance_count(cls) -> int: ...
+
+    def strength(self) -> int:
         return self.__strength
 
-    def is_alive(self):
+    def is_alive(self) -> bool:
         return self.__alive
 
-    def f_set_world(self, world):
+    def f_set_world(self, world: World) -> None:
         self.__world = world
 
-    def f_world(self):
-        return self.__world
+    def f_world(self) -> World:
+        return self.__world  # type: ignore
 
-    def f_set_location(self, location):
+    def f_set_location(self, location: int) -> None:
         self.__location = location
 
-    def f_location(self):
-        return self.__location
+    def f_location(self) -> int:
+        return self.__location  # type: ignore
 
     @staticmethod
-    def f_fights_back():
+    def f_fights_back() -> bool:
         return True
 
-    def f_apparent_strength(self):
-        return 0 if self.__cloaked else self.strength()
+    def f_apparent_strength(self) -> int:
+        return 0 if self.__cloaked else self.__strength
 
-    def f_apparent_type(self):
+    def f_apparent_type(self) -> type[Soil] | type[Self]:
         return Soil if self.__cloaked else type(self)
 
-    def f_appears_poisonous(self):
+    def f_appears_poisonous(self) -> bool:
         return self.__poisonous and not self.__cloaked
 
-    def f_add_organ(self, organ):
+    def f_add_organ(self, organ: Organ) -> None:
         self.f_expend(organ.creation_cost())
         if len(self.__organs) < self.__MAX_ORGANS:
             self.__organs.append(organ)
 
-    def f_defensive_damage(self):
-        damage = 0
-        for organ in self.__organs:
-            damage += organ.f_defensive_damage()
-        return damage
+    def f_defensive_damage(self) -> int:
+        # Use sum() with generator for efficiency
+        return sum(organ.f_defensive_damage() for organ in self.__organs)
 
-    def f_metabolic_cycle(self):
+    def f_metabolic_cycle(self) -> None:
         for organ in self.__organs:
             organ.f_new_turn()
             self.f_expend(organ.maintenance_cost())
         self.f_expend(self.__MAINTENANCE_COST)
 
-    def f_cap_strength(self):
+    def f_cap_strength(self) -> None:
         self.__strength = min(self.__strength, self.__MAX_STRENGTH)
 
-    def f_feed(self, food_energy):
+    def f_feed(self, food_energy: int) -> None:
         if self.__alive:
             self.__strength += food_energy
 
-    def f_expend(self, food_energy):
+    def f_expend(self, food_energy: int) -> None:
         self.__strength -= food_energy
         if self.__strength < 0:
             self.f_die()
 
-    def f_die(self):
+    def f_die(self) -> None:
         if self.__alive:
             self.destroyed()
         self.__strength = 0
         self.__alive = False
 
-    def f_replace_me_with(self, replacement):
-        self.__world.replace(self, replacement)
+    def f_replace_me_with(self, replacement: Creature) -> None:
+        self.__world.replace(self, replacement)  # type: ignore
 
-    def f_attack(self, defender):
+    def f_attack(self, defender: Creature) -> Self | Creature:
         if not defender.f_fights_back():
             return self.__attacker_wins(defender)
         if not self.f_fights_back():
             return self.__defender_wins(defender)
-        if self.strength() > defender.strength():
+        if self.__strength > defender.strength():
             return self.__attacker_wins(defender)
         return self.__defender_wins(defender)
 
-    def __defender_wins(self, defender):
-        defender.f_feed(self.strength() - self.f_defensive_damage())
+    def __defender_wins(self, defender: Creature) -> Creature:
+        defender.f_feed(self.__strength - self.f_defensive_damage())
         self.f_die()
         return defender
 
-    def __attacker_wins(self, defender):
+    def __attacker_wins(self, defender: Creature) -> Self:
         self.f_feed(defender.strength() - defender.f_defensive_damage())
         defender.f_die()
         return self
 
-    def f_cloak(self):
+    def f_cloak(self) -> None:
         self.__cloaked = True
 
-    def f_uncloak(self):
+    def f_uncloak(self) -> None:
         self.__cloaked = False
 
-    def f_is_cloaked(self):
+    def f_is_cloaked(self) -> bool:
         return self.__cloaked
 
-    def f_become_poisonous(self):
+    def f_become_poisonous(self) -> None:
         self.__poisonous = True
 
 
-class Soil(Creature):
-    __PLANT_GROWTH_PROBABILITY = 0.01
-    __instance_count = 0
-    colour = ""
+"""
 
-    def __init__(self):
+    Organ
+
+"""
+
+
+class Organ(ABC):
+    F_CREATION_COST: int | None = None
+    F_USE_COST: int | None = None
+    F_MAINTENANCE_COST: int | None = None
+
+    def __init__(self, host: Creature) -> None:
+        self.__host: Creature = host
+        host.f_add_organ(self)
+        self.__uses_this_turn: int = 0  # currently affects only Cilia
+
+    def host(self) -> Creature:
+        return self.__host
+
+    def creation_cost(self) -> int:
+        return self.F_CREATION_COST  # type: ignore
+
+    def use_cost(self) -> int:
+        return self.F_USE_COST  # type: ignore
+
+    def maintenance_cost(self) -> int:
+        return self.F_MAINTENANCE_COST  # type: ignore
+
+    def f_new_turn(self) -> None:
+        self.__uses_this_turn = 0
+
+    def f_used_once(self) -> None:
+        self.__uses_this_turn += 1
+
+    def f_uses_this_turn(self) -> int:
+        return self.__uses_this_turn
+
+    def f_defensive_damage(self) -> int:
+        return 0
+
+    def f_host_would_be_alive_after_use(self) -> bool:
+        self.host().f_expend(self.use_cost())
+        return self.__host.is_alive()
+
+
+"""
+
+    Soil / Plant / PoisonDrop
+
+"""
+
+
+class Soil(Creature):
+    __PLANT_GROWTH_PROBABILITY: float = 0.01
+    __instance_count: int = 0
+    colour: str = ""
+
+    def __init__(self) -> None:
         super().__init__()
         Soil.__instance_count += 1
 
-    def do_turn(self):
+    def do_turn(self) -> None:
         if random.random() < self.__PLANT_GROWTH_PROBABILITY:
             self.become_plant()
 
-    def become_plant(self):
+    def become_plant(self) -> None:
         self.f_replace_me_with(Plant())
 
     @classmethod
-    def instance_count(cls):
+    def instance_count(cls) -> int:
         return Soil.__instance_count
 
     @classmethod
-    def destroyed(cls):
+    def destroyed(cls) -> None:
         Soil.__instance_count -= 1
 
     @staticmethod
-    def f_fights_back():
+    def f_fights_back() -> bool:
         return False
 
-    def f_expend(self, food_energy):
+    def f_expend(self, food_energy: int) -> None:
         pass
 
-    def f_grant_initial_strength(self):
+    def f_feed(self, food_energy: int) -> None:
         pass
 
-    def f_feed(self, food_energy):
-        pass
-
-    def f_die(self):
+    def f_die(self) -> None:
         pass
 
 
 class Plant(Creature):
-    __instance_count = 0
-    colour = "#d2f53c"
+    __instance_count: int = 0
+    colour: str = "#d2f53c"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         Plant.__instance_count += 1
         self.f_feed(PhotoGland.CREATION_COST + Propagator.CREATION_COST)
         PhotoGland(self)
-        self.propagator = PlantPropagator(self)
+        self.propagator: PlantPropagator = PlantPropagator(self)
 
     @staticmethod
-    def f_fights_back():
+    def f_fights_back() -> bool:
         return False
 
-    def do_turn(self):
+    def do_turn(self) -> None:
         if self.strength() > Creature.MAX_STRENGTH:
             self.propagator.give_birth(self.strength() / 2, Direction.random())
 
     @classmethod
-    def instance_count(cls):
+    def instance_count(cls) -> int:
         return Plant.__instance_count
 
     @classmethod
-    def destroyed(cls):
+    def destroyed(cls) -> None:
         Plant.__instance_count -= 1
 
 
 class PoisonDrop(Creature):
-    F_DISSIPATION_RATE = 0.5
-    __instance_count = 0
-    colour = "black"
+    F_DISSIPATION_RATE: float = 0.5
+    __instance_count: int = 0
+    colour: str = "black"
 
-    def __init__(self, volume):
+    def __init__(self, volume: int) -> None:
         super().__init__()
         self.f_feed(1 + volume)
-        self.__gland = PoisonGland(self)
+        self.__gland: PoisonGland = PoisonGland(self)
         self.__gland.add_poison(volume)
         super().f_expend(volume)
         PoisonDrop.__instance_count += 1
 
-    def f_apparent_type(self):
+    def f_apparent_type(self) -> type[Soil]:
         return Soil
 
-    def f_expend(self, food_energy):
+    def f_expend(self, food_energy: int) -> None:
         pass
 
-    def do_turn(self):
+    def do_turn(self) -> None:
         volume = math.ceil(self.__gland.current_volume() * self.F_DISSIPATION_RATE)
         self.__gland.remove_poison(volume)
         if self.__gland.current_volume() <= 0:
             self.f_die()
 
     @classmethod
-    def instance_count(cls):
+    def instance_count(cls) -> int:
         return PoisonDrop.__instance_count
 
     @classmethod
-    def destroyed(cls):
+    def destroyed(cls) -> None:
         PoisonDrop.__instance_count -= 1
 
 
-class Direction(Enum):
-    N = (0, -1)
-    NE = (1, -1)
-    E = (1, 0)
-    SE = (1, 1)
-    S = (0, 1)
-    SW = (-1, 1)
-    W = (-1, -0)
-    NW = (-1, -1)
+"""
 
-    def __init__(self, dx, dy):
-        self.dx, self.dy = dx, dy
+    Organs
 
-    # noinspection PyArgumentList
-    def opposite(self):
-        return Direction((-self.dx, -self.dy))
-
-    # noinspection PyTypeChecker
-    @classmethod
-    def random(cls):
-        return random.choice(list(cls))
-
-
-class Organ(ABC):
-    F_CREATION_COST = None
-    F_USE_COST = None
-    F_MAINTENANCE_COST = None
-
-    def __init__(self, host: Creature):
-        self.__host = host
-        host.f_add_organ(self)
-        self.__uses_this_turn = 0  # currently affects only Cilia
-
-    def host(self):
-        return self.__host
-
-    def creation_cost(self):
-        return self.F_CREATION_COST
-
-    def use_cost(self):
-        return self.F_USE_COST
-
-    def maintenance_cost(self):
-        return self.F_MAINTENANCE_COST
-
-    def f_new_turn(self):
-        self.__uses_this_turn = 0
-
-    def f_used_once(self):
-        self.__uses_this_turn += 1
-
-    def f_uses_this_turn(self):
-        return self.__uses_this_turn
-
-    def f_defensive_damage(self):
-        return 0
-
-    def f_host_would_be_alive_after_use(self):
-        self.host().f_expend(self.use_cost())
-        return self.__host.is_alive()
+"""
 
 
 class Cilia(Organ):
@@ -461,7 +520,7 @@ class Cilia(Organ):
     F_MAINTENANCE_COST = MAINTENANCE_COST = 10
     F_USE_COST = USE_COST = 20
 
-    def move_in_direction(self, bearing):
+    def move_in_direction(self, bearing: Direction) -> None:
         if self.f_host_would_be_alive_after_use() and self.f_uses_this_turn() == 0:
             self.f_used_once()
             self.host().f_world().move(self.host(), bearing)
@@ -477,20 +536,21 @@ class Propagator(Organ, ABC):
     F_MAINTENANCE_COST = MAINTENANCE_COST = 5
     F_USE_COST = USE_COST = 100
 
-    def give_birth(self, initial_energy, direction):
-        self.host().f_expend(initial_energy)
+    def give_birth(self, initial_energy: float, direction: Direction) -> None:
+        self.host().f_expend(int(initial_energy))
         if self.f_host_would_be_alive_after_use():
             child = self.make_child()
-            child.f_feed(initial_energy)
+            child.f_feed(int(initial_energy))
             self.host().f_world().drop_beside(self.host(), child, direction)
 
     @abstractmethod
-    def make_child(self) -> Any:
+    def make_child(self) -> Creature:
         pass
 
 
 class PlantPropagator(Propagator):
-    def make_child(self):
+    @override
+    def make_child(self) -> Plant:
         return Plant()
 
 
@@ -499,23 +559,23 @@ class Cloaking(Organ):
     F_MAINTENANCE_COST = MAINTENANCE_COST = 10
     F_USE_COST = USE_COST = 100
 
-    def cloak(self):
+    def cloak(self) -> None:
         if self.f_host_would_be_alive_after_use():
             self.host().f_cloak()
 
-    def uncloak(self):
+    def uncloak(self) -> None:
         self.host().f_uncloak()
 
-    def maintenance_cost(self):
+    def maintenance_cost(self) -> int:
         return self.F_MAINTENANCE_COST + (
             self.F_USE_COST if self.host().f_is_cloaked() else 0
-        )
+        )  # type: ignore
 
 
 class Sensor(Organ, ABC):
-    F_DEFAULT_VALUE = None
+    F_DEFAULT_VALUE: Any = None
 
-    def sense(self, direction):
+    def sense(self, direction: Direction) -> Any:
         if self.f_host_would_be_alive_after_use():
             target = (
                 self.host().f_world().creature_at_offset_from(self.host(), direction)
@@ -525,65 +585,65 @@ class Sensor(Organ, ABC):
             return self.F_DEFAULT_VALUE
 
     @abstractmethod
-    def sensor_value(self, target):
+    def sensor_value(self, target: Creature) -> Any:
         pass
 
 
 class EnergySensor(Sensor):
-    F_DEFAULT_VALUE = 0
+    F_DEFAULT_VALUE: int = 0
     F_CREATION_COST = CREATION_COST = 100
     F_MAINTENANCE_COST = MAINTENANCE_COST = 10
     F_USE_COST = USE_COST = 2
 
-    def sensor_value(self, target):
+    def sensor_value(self, target: Creature) -> int:
         return target.f_apparent_strength()
 
 
 class CreatureTypeSensor(Sensor):
-    F_DEFAULT_VALUE = Soil
+    F_DEFAULT_VALUE: type[Soil] = Soil
     F_CREATION_COST = CREATION_COST = 100
     F_MAINTENANCE_COST = MAINTENANCE_COST = 10
     F_USE_COST = USE_COST = 2
 
-    def sensor_value(self, target):
+    def sensor_value(self, target: Creature) -> type:
         return target.f_apparent_type()
 
 
 class LifeSensor(Sensor):
-    F_DEFAULT_VALUE = False
+    F_DEFAULT_VALUE: bool = False
     F_CREATION_COST = CREATION_COST = 50
     F_MAINTENANCE_COST = MAINTENANCE_COST = 5
     F_USE_COST = USE_COST = 1
 
-    def sensor_value(self, target):
+    def sensor_value(self, target: Creature) -> bool:
         return target.f_apparent_type() != Soil
 
 
 class PoisonSensor(Sensor):
-    F_DEFAULT_VALUE = False
+    F_DEFAULT_VALUE: bool = False
     F_CREATION_COST = CREATION_COST = 50
     F_MAINTENANCE_COST = MAINTENANCE_COST = 5
     F_USE_COST = USE_COST = 1
 
-    def sensor_value(self, target):
+    def sensor_value(self, target: Creature) -> bool:
         return target.f_appears_poisonous()
 
 
 class PoisonGland(Organ):
     F_CREATION_COST = CREATION_COST = 500
     F_MAINTENANCE_COST = MAINTENANCE_COST = 20
-    __RESERVOIR_CAPACITY = 1000
-    __DAMAGE_MULTIPLIER = 4
+    __RESERVOIR_CAPACITY: int = 1000
+    __DAMAGE_MULTIPLIER: int = 4
 
-    def __init__(self, host):
+    def __init__(self, host: Creature) -> None:
         super().__init__(host)
         self.host().f_become_poisonous()
-        self.__reservoir_volume = 0
+        self.__reservoir_volume: int = 0
 
-    def f_defensive_damage(self):
+    def f_defensive_damage(self) -> int:
         return self.__reservoir_volume * self.__DAMAGE_MULTIPLIER
 
-    def add_poison(self, to_add):
+    def add_poison(self, to_add: int) -> None:
         if to_add <= 0:
             return
         to_add = min(self.host().strength(), to_add)
@@ -592,14 +652,14 @@ class PoisonGland(Organ):
             self.__RESERVOIR_CAPACITY, self.__reservoir_volume + to_add
         )
 
-    def remove_poison(self, to_remove):
+    def remove_poison(self, to_remove: int) -> None:
         if to_remove > 0:
             self.__reservoir_volume = max(0, self.__reservoir_volume - to_remove)
 
-    def current_volume(self):
+    def current_volume(self) -> int:
         return self.__reservoir_volume
 
-    def drop_poison(self, direction, volume_desired):
+    def drop_poison(self, direction: Direction, volume_desired: int) -> None:
         if volume_desired <= 0:
             return
         volume = min(self.__reservoir_volume, volume_desired)
@@ -613,5 +673,6 @@ class Spikes(Organ):
     F_MAINTENANCE_COST = MAINTENANCE_COST = 5
     F_DEFENSIVE_DAMAGE = DEFENSIVE_DAMAGE = 200
 
-    def f_defensive_damage(self):
+    @override
+    def f_defensive_damage(self) -> int:
         return self.F_DEFENSIVE_DAMAGE

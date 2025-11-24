@@ -17,7 +17,7 @@ import time
 import tkinter as tk
 from multiprocessing import Pipe, Process
 
-from shared import World
+from shared import Creature, World
 
 COLOURS = [
     "#e6194b",
@@ -249,6 +249,8 @@ class Simulation:
         self.world.reset()
         self.grow_initial_plants()
         for index, competitor in enumerate(competitor_classes):
+            if hasattr(competitor, "export_top_list"):
+                competitor.export_top_list()
             setattr(competitor, "_{}__instance_count".format(competitor.__name__), 0)
             competitor.colour = COLOURS[index]
             self.populate(competitor, self.N_CREATURES)
@@ -281,13 +283,17 @@ class Simulation:
             command = self.connection.recv()
             command.run_on(self)
 
-    def check_win(self):
+    def check_win(self) -> Creature | None:
         live_competitors = 0
+        winner: Creature | None
         for competitor in self.competitor_classes:
             if competitor.instance_count() != 0:
                 live_competitors += 1
+                winner = competitor
         if live_competitors == 1:
             self.game_over = True
+            return winner  # type : ignore
+        return None
 
     def start(self):
         self.last_start = None
