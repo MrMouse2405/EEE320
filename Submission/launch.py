@@ -20,6 +20,7 @@ from Competitors import (
     Actor3,
     Actor4,
     Actor5,
+    Actor6,
     AgrarianInstructors,
     HuntingInstructors,
     SyedPabon,
@@ -37,6 +38,7 @@ COMPETITOR_CLASSES = (
     Actor3.DNA_CMA_ES_BUG_INFERENCE3,
     Actor4.DNA_CMA_ES_BUG_INFERENCE4,
     Actor5.DNA_CMA_ES_BUG_INFERENCE5,
+    Actor6.DNA_CMA_ES_BUG_INFERENCE6,
     TurtleBug.TURTLE,
 )
 

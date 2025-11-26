@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class HybridPlantBug(Creature):
     __instance_count = 0
@@ -36,9 +48,9 @@ class HybridPlantBug(Creature):
 
     def do_turn(self):
         if not (self.leaf and self.sensor):
-            self._build_if_possible('leaf', PhotoGland)
-            self._build_if_possible('sensor', CreatureTypeSensor)
-            self._build_if_possible('cilia', Cilia)
+            self._build_if_possible("leaf", PhotoGland)
+            self._build_if_possible("sensor", CreatureTypeSensor)
+            self._build_if_possible("cilia", Cilia)
             return
         if self.strength() > 0.7 * Creature.MAX_STRENGTH and self.cilia:
             for d in Direction:

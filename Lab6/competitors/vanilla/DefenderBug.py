@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class DefenderBug(Creature):
     __instance_count = 0
@@ -47,7 +59,7 @@ class DefenderBug(Creature):
                 self.poison = PoisonGland(self)
             if self.womb is None and self.strength() > Propagator.CREATION_COST:
                 self.womb = DefenderBug.Womb(self)
-            self._build_if_possible('cilia', Cilia)
+            self._build_if_possible("cilia", Cilia)
             return
         if self.strength() > 0.75 * Creature.MAX_STRENGTH:
             self.poison.drop_poison(Direction.random(), 30)

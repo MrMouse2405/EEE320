@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class TankBug(Creature):
     __instance_count = 0

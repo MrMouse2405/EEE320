@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class CloakHunterBug(Creature):
     __instance_count = 0
@@ -36,9 +48,9 @@ class CloakHunterBug(Creature):
 
     def do_turn(self):
         if not (self.cilia and self.cloak and self.life_sensor):
-            self._build_if_possible('cilia', Cilia)
-            self._build_if_possible('cloak', Cloaking)
-            self._build_if_possible('life_sensor', LifeSensor)
+            self._build_if_possible("cilia", Cilia)
+            self._build_if_possible("cloak", Cloaking)
+            self._build_if_possible("life_sensor", LifeSensor)
             return
         adjacent_life = any(self.life_sensor.sense(d) for d in Direction)
         if adjacent_life:

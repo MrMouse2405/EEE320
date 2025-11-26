@@ -1,14 +1,26 @@
 import numpy as np
 import random
 from shared import (
-    Creature, Soil, Plant, Direction,
-    Cilia, CreatureTypeSensor, EnergySensor, LifeSensor, PoisonSensor,
-    PhotoGland, Spikes, Cloaking, Propagator, PoisonGland
+    Creature,
+    Soil,
+    Plant,
+    Direction,
+    Cilia,
+    CreatureTypeSensor,
+    EnergySensor,
+    LifeSensor,
+    PoisonSensor,
+    PhotoGland,
+    Spikes,
+    Cloaking,
+    Propagator,
+    PoisonGland,
 )
 
 # ===============================
 #   SimpleRLV3 — MAIN CLASS
 # ===============================
+
 
 class SimpleRLV3(Creature):
     __instance_count = 0
@@ -17,33 +29,34 @@ class SimpleRLV3(Creature):
     # --------------------------------------------
     # DNA layout (20 parameters, RL-friendly)
     # --------------------------------------------
-    DEFAULT_DNA = np.array([
-        # A. organ growth thresholds
-        100,    # 0 grow_cilia
-        150,    # 1 grow_type_sensor
-        200,    # 2 grow_energy_sensor
-        180,    # 3 grow_life_sensor
-        200,    # 4 grow_poison_sensor
-        300,    # 5 grow_photogland
-        250,    # 6 grow_spikes
-        500,    # 7 grow_cloak
-        400,    # 8 grow_repro (Propagator)
-        600,    # 9 grow_poison_gland
-
-        # B. movement behavior weights
-        1.0,    # 10 prefer_plant
-        0.7,    # 11 prefer_enemy
-        1.0,    # 12 avoid_poison
-        0.01,   # 13 energy_seek_scale
-
-        # C. thresholds + special actions
-        0.5,    # 14 move_threshold
-        1200,   # 15 reproduce_strength_threshold
-        0.30,   # 16 reproduce_give_frac
-        1000,   # 17 poison_drop_threshold
-        0.25,   # 18 random_walk_prob
-        0.4,    # 19 cloak_threshold (fraction of strength)
-    ], dtype=float)
+    DEFAULT_DNA = np.array(
+        [
+            # A. organ growth thresholds
+            100,  # 0 grow_cilia
+            150,  # 1 grow_type_sensor
+            200,  # 2 grow_energy_sensor
+            180,  # 3 grow_life_sensor
+            200,  # 4 grow_poison_sensor
+            300,  # 5 grow_photogland
+            250,  # 6 grow_spikes
+            500,  # 7 grow_cloak
+            400,  # 8 grow_repro (Propagator)
+            600,  # 9 grow_poison_gland
+            # B. movement behavior weights
+            1.0,  # 10 prefer_plant
+            0.7,  # 11 prefer_enemy
+            1.0,  # 12 avoid_poison
+            0.01,  # 13 energy_seek_scale
+            # C. thresholds + special actions
+            0.5,  # 14 move_threshold
+            1200,  # 15 reproduce_strength_threshold
+            0.30,  # 16 reproduce_give_frac
+            1000,  # 17 poison_drop_threshold
+            0.25,  # 18 random_walk_prob
+            0.4,  # 19 cloak_threshold (fraction of strength)
+        ],
+        dtype=float,
+    )
 
     # --------------------------------------------
     # Constructor
@@ -92,8 +105,8 @@ class SimpleRLV3(Creature):
 
     def maybe_grow(self, threshold, organ_obj, cls):
         """Grow an organ if:
-           - We don't have it
-           - Strength > threshold
+        - We don't have it
+        - Strength > threshold
         """
         if organ_obj is None and self.strength() > threshold:
             new = cls(self)
@@ -216,8 +229,10 @@ class SimpleRLV3(Creature):
 #          PROPAGATOR FOR RL BUG
 # ============================================
 
+
 class RLPropagator(Propagator):
     """Children inherit EXACT SAME DNA (no mutation)."""
+
     __slots__ = ()
 
     def make_child(self):

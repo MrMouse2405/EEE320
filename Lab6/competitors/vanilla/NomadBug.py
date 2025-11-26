@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class NomadBug(Creature):
     __instance_count = 0
@@ -21,8 +33,16 @@ class NomadBug(Creature):
         self.cilia = None
         self.life_sensor = None
         self._dir_index = 0
-        self._dirs = [Direction.N, Direction.NE, Direction.E, Direction.SE,
-                      Direction.S, Direction.SW, Direction.W, Direction.NW]
+        self._dirs = [
+            Direction.N,
+            Direction.NE,
+            Direction.E,
+            Direction.SE,
+            Direction.S,
+            Direction.SW,
+            Direction.W,
+            Direction.NW,
+        ]
 
     @classmethod
     def destroyed(cls):
@@ -38,8 +58,8 @@ class NomadBug(Creature):
 
     def do_turn(self):
         if not (self.cilia and self.life_sensor):
-            self._build_if_possible('cilia', Cilia)
-            self._build_if_possible('life_sensor', LifeSensor)
+            self._build_if_possible("cilia", Cilia)
+            self._build_if_possible("life_sensor", LifeSensor)
             return
         d = self._dirs[self._dir_index]
         self._dir_index = (self._dir_index + 1) % len(self._dirs)

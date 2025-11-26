@@ -5,12 +5,24 @@ Fixed pack: 20 archetypes, each in its own file.
 - Any helper creature subclasses the main class (per shared.py rules).
 - No use of framework f_* internals.
 """
+
 from shared import (
-    Creature, Cilia, PhotoGland, Propagator, Direction,
-    Spikes, Cloaking,
-    EnergySensor, CreatureTypeSensor, LifeSensor, PoisonSensor,
-    Plant, Soil, PoisonGland
+    Creature,
+    Cilia,
+    PhotoGland,
+    Propagator,
+    Direction,
+    Spikes,
+    Cloaking,
+    EnergySensor,
+    CreatureTypeSensor,
+    LifeSensor,
+    PoisonSensor,
+    Plant,
+    Soil,
+    PoisonGland,
 )
+
 
 class MirrorBug(Creature):
     __instance_count = 0
@@ -40,12 +52,13 @@ class MirrorBug(Creature):
 
     def do_turn(self):
         if not (self.cilia and self.type_sensor and self.womb):
-            self._build_if_possible('cilia', Cilia)
-            self._build_if_possible('type_sensor', CreatureTypeSensor)
+            self._build_if_possible("cilia", Cilia)
+            self._build_if_possible("type_sensor", CreatureTypeSensor)
             if self.womb is None and self.strength() > Propagator.CREATION_COST:
                 self.womb = MirrorBug.Womb(self)
             return
         import random
+
         if random.random() < 0.5:
             for d in Direction:
                 t = self.type_sensor.sense(d)
