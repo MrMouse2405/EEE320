@@ -15,7 +15,7 @@ implementations in C++ and Java by Scott Knight and Greg Phillips
 
 import tkinter as tk
 
-from competitors.dna import Evolver, MemoryEvolver, SyedPabon, actor
+from competitors.dna import Evolver, MemoryEvolver, SyedPabon, actor, actor2
 from competitors.examples import AgrarianInstructors, HuntingInstructors
 from competitors.vanilla import (
     AggressorBug,
@@ -71,7 +71,8 @@ COMPETITOR_CLASSES = (
     # TankBug.TankBug,
     # VampireBug.VampireBug,
     SyedPabon.GregPhillips,
-    actor.SimpleRLV3
+    actor.SimpleRLV3,
+    actor2.DNA_CMA_ES_BUG_INFERENCE,
 )
 
 

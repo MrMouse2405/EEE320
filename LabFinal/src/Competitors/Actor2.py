@@ -1,18 +1,14 @@
 """
-DNA_CMA_ES_BUG_INFERENCE - Phase-Based Adaptive Strategy (Inference Only)
+DNA_CMA_ES_BUG_INFERENCE2
 
-This is the deployment version of the trained bug:
-- Loads best DNA from training file
-- No reward scoring (pure behavior)
-- Phase-based strategy (early/mid/late game)
-- Proper cilia management
+Phase-Based Adaptive Strategy. Inference File
+
+Competition-ready version
+
+
 """
 
-import os
 import random
-from typing import override
-
-import numpy as np
 
 from shared import (
     Cilia,
@@ -31,111 +27,118 @@ from shared import (
     Spikes,
 )
 
+"""
 
-class DNA_CMA_ES_BUG_INFERENCE(Creature):
+    Weights
+
+"""
+
+"""
+DNA_2
+Auto-generated DNA weights from training.
+Best reward: 122,159,033
+DNA length: 64
+"""
+
+# Best trained DNA as plain Python list
+TRAINED_DNA = [
+    197.964205424652,
+    100.20444583122905,
+    298.2395399395777,
+    802.534818008111,
+    599.9739266026043,
+    347.0643803984026,
+    248.38446234155995,
+    1199.9978273370702,
+    298.8523403267022,
+    997.71000894307,
+    2.590561162696225,
+    3.119362215074242,
+    2.7182216349755715,
+    0.8948904355854075,
+    0.4371793065175642,
+    0.6875823643966135,
+    0.8091265459996764,
+    0.8456815923359416,
+    2.0816680308672577,
+    5.653558352313764,
+    -1.2132189071680626,
+    0.06385205400884664,
+    0.6148023367157958,
+    1.206550498364155,
+    500.6845349981582,
+    0.15135068500954973,
+    0.843138260558857,
+    799.2760323783525,
+    0.2156429132166918,
+    2.7524393919577257,
+    0.28413719750421546,
+    0.36213152435572415,
+    149.1049976621792,
+    100.18077642448448,
+    198.60060838353496,
+    503.05027263291015,
+    400.017007747396,
+    298.58295341583687,
+    200.34836044667128,
+    497.7937362962651,
+    251.1960372672499,
+    599.3494497400369,
+    5.807406889220823,
+    1.786491005944219,
+    2.557139949646235,
+    0.2644392030324272,
+    0.5991839777211431,
+    0.09482304932374931,
+    0.5685064328163048,
+    0.9766577821724599,
+    2.8224586990578517,
+    0.8998174078238413,
+    -0.3361244140160059,
+    0.09443408193928078,
+    0.9255697917637463,
+    0.7080215924118618,
+    350.3611372878996,
+    0.2361617630462495,
+    1.6021535806262417,
+    999.5391782597721,
+    0.2899371902359654,
+    5.061705939594747,
+    0.12853199170981114,
+    0.5014220452353357,
+]
+
+"""
+
+    Inference Engine
+
+"""
+
+
+class DNA_CMA_ES_BUG_INFERENCE2(Creature):
     """
     Inference-only version of the phase-based trained bug.
-    Loads best DNA from training and uses it without any reward scoring.
-
-    Phase tracking uses individual bug's age - no framework modification needed.
+    Uses plain Python lists - no numpy required.
     """
 
     __instance_count = 0
+    colour = "#4444dd"
 
-    # Load from the training file
-    TOP_FILE = "dna_top10.npy"
-    colour = "#4444dd"  # Blue to distinguish from training red
-
-    # Phase transition turn (based on bug age)
+    # Phase transition (number of turns for full transition from early to late game)
     PHASE_TRANSITION = 500
-
-    # Default DNA - Phase-based (64 values)
-    # Fallback if no trained weights exist
-    DEFAULT_DNA = np.array(
-        [
-            # ========== EARLY GAME (indices 0-31) ==========
-            # ORGAN THRESHOLDS - minimum strength after creation
-            200,  # [0] Cilia threshold
-            100,  # [1] Type sensor threshold
-            300,  # [2] Energy sensor threshold
-            800,  # [3] Life sensor threshold
-            600,  # [4] Poison sensor threshold
-            350,  # [5] PhotoGland threshold
-            250,  # [6] Spikes threshold
-            1200,  # [7] Cloaking threshold
-            300,  # [8] Womb threshold
-            1000,  # [9] Poison gland threshold
-            4,  # [10] Target cilia count
-            2,  # [11] Target photogland count
-            0,  # [12] Reserved
-            0.85,  # [13] Combat weight
-            0.5,  # [14] Reproduction weight
-            0.05,  # [15] Poison weight
-            0.05,  # [16] Cloak weight
-            0.2,  # [17] Foraging weight
-            3.0,  # [18] Enemy attraction
-            2.5,  # [19] Plant attraction
-            -2.0,  # [20] Poison avoidance
-            0.02,  # [21] Energy attraction
-            0.9,  # [22] Move probability
-            0.7,  # [23] Min strength ratio
-            500,  # [24] Min absolute strength
-            0.2,  # [25] Cloak threshold
-            1.4,  # [26] Aggressive pursuit ratio
-            800,  # [27] Min strength to reproduce
-            0.35,  # [28] Energy fraction
-            5,  # [29] Max offspring
-            0.35,  # [30] Population scaling
-            0.5,  # [31] Reproduction probability
-            # ========== LATE GAME (indices 32-63) ==========
-            150,  # [32] Cilia threshold
-            50,  # [33] Type sensor threshold
-            200,  # [34] Energy sensor threshold
-            500,  # [35] Life sensor threshold
-            400,  # [36] Poison sensor threshold
-            300,  # [37] PhotoGland threshold
-            200,  # [38] Spikes threshold
-            500,  # [39] Cloaking threshold
-            250,  # [40] Womb threshold
-            600,  # [41] Poison gland threshold
-            6,  # [42] Target cilia count
-            2,  # [43] Target photogland count
-            0,  # [44] Reserved
-            0.95,  # [45] Combat weight
-            0.2,  # [46] Reproduction weight
-            0.15,  # [47] Poison weight
-            0.1,  # [48] Cloak weight
-            0.1,  # [49] Foraging weight
-            4.0,  # [50] Enemy attraction
-            1.0,  # [51] Plant attraction
-            -1.5,  # [52] Poison avoidance
-            0.01,  # [53] Energy attraction
-            0.95,  # [54] Move probability
-            0.5,  # [55] Min strength ratio
-            350,  # [56] Min absolute strength
-            0.15,  # [57] Cloak threshold
-            1.2,  # [58] Aggressive pursuit ratio
-            1000,  # [59] Min strength to reproduce
-            0.3,  # [60] Energy fraction
-            3,  # [61] Max offspring
-            0.5,  # [62] Population scaling
-            0.25,  # [63] Reproduction probability
-        ],
-        dtype=float,
-    )
 
     def __init__(self, dna=None):
         super().__init__()
-        DNA_CMA_ES_BUG_INFERENCE.__instance_count += 1
+        DNA_CMA_ES_BUG_INFERENCE2.__instance_count += 1
 
-        # Use provided DNA or load best from file
+        # Use provided DNA or class default
         if dna is not None:
-            self.dna = np.copy(dna)
+            self.dna = list(dna)  # Copy as plain list
         else:
-            self.dna = self.load_best_dna()
+            self.dna = list(TRAINED_DNA)
 
         # Organs - store actual references for cilia
-        self.cilia_list = []  # List of actual Cilia objects
+        self.cilia_list = []
         self.type_sensor = None
         self.energy_sensor = None
         self.life_sensor = None
@@ -150,59 +153,34 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         self.offspring_count = 0
         self.age = 0
 
-    # ======================================================
+    # ==========================================================================
     #              INSTANCE COUNTING
-    # ======================================================
+    # ==========================================================================
     @classmethod
     def instance_count(cls):
-        return DNA_CMA_ES_BUG_INFERENCE.__instance_count
+        return DNA_CMA_ES_BUG_INFERENCE2.__instance_count
 
     @classmethod
     def destroyed(cls):
-        DNA_CMA_ES_BUG_INFERENCE.__instance_count -= 1
+        DNA_CMA_ES_BUG_INFERENCE2.__instance_count -= 1
 
-    # ======================================================
-    #              LOAD BEST DNA
-    # ======================================================
-    @classmethod
-    def load_best_dna(cls):
-        """Load the best DNA from training file."""
-        if os.path.exists(cls.TOP_FILE):
-            try:
-                top_dna_list = list(np.load(cls.TOP_FILE, allow_pickle=True))
-                if len(top_dna_list) > 0:
-                    # Get the best DNA (highest reward)
-                    best_entry = top_dna_list[0]
-                    best_dna = best_entry[1]
-                    print(f"[INFERENCE] Loaded best DNA with reward: {best_entry[0]}")
-                    return np.copy(best_dna)
-            except Exception as e:
-                print(f"[INFERENCE] Failed to load DNA: {e}")
-
-        print("[INFERENCE] No trained DNA found, using default")
-        return np.copy(cls.DEFAULT_DNA)
-
-    # ======================================================
+    # ==========================================================================
     #              PHASE-BASED DNA ACCESS
-    # ======================================================
+    # ==========================================================================
     def get_phase_weight(self):
-        """Returns interpolation weight: 0 = early game, 1 = late game
+        """Returns interpolation weight: 0 = early game, 1 = late game.
 
-        Uses individual bug's age as proxy for game phase.
-        This works because all bugs age together each turn.
+        Uses bug's age as proxy for game phase.
         """
-        # Use this bug's age as the phase indicator
-        # Older bugs = later in game
-        turn = self.age
-        if turn <= 0:
+        if self.age <= 0:
             return 0.0
-        elif turn >= self.PHASE_TRANSITION:
+        elif self.age >= self.PHASE_TRANSITION:
             return 1.0
         else:
-            return turn / self.PHASE_TRANSITION
+            return self.age / self.PHASE_TRANSITION
 
     def get_param(self, early_idx, late_idx=None):
-        """Get parameter interpolated between early and late game"""
+        """Get parameter interpolated between early and late game."""
         if late_idx is None:
             late_idx = early_idx + 32
 
@@ -211,11 +189,11 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         late_val = self.dna[late_idx]
         return early_val + phase * (late_val - early_val)
 
-    # ======================================================
+    # ==========================================================================
     #                       TURN
-    # ======================================================
+    # ==========================================================================
     def do_turn(self):
-        """Execute turn without any reward scoring."""
+        """Execute turn."""
         self.age += 1
 
         # Grow organs based on phase
@@ -224,11 +202,11 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         # Execute actions based on phase-weighted priorities
         self.execute_actions()
 
-    # ======================================================
+    # ==========================================================================
     #                  ORGAN MANAGEMENT
-    # ======================================================
+    # ==========================================================================
     def count_organs(self):
-        """Count total organs"""
+        """Count total organs."""
         count = len(self.cilia_list) + self.photoglands
         if self.type_sensor:
             count += 1
@@ -252,7 +230,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         return self.count_organs() < Creature.MAX_ORGANS
 
     def grow_singleton(self, threshold_early, organ_ref, organ_class):
-        """Grow a singleton organ if conditions met"""
+        """Grow a singleton organ if conditions met."""
         if organ_ref is not None:
             return organ_ref
 
@@ -264,12 +242,12 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         return None
 
     def grow_organs_adaptive(self):
-        """Grow organs based on game phase and current state"""
+        """Grow organs based on game phase and current state."""
 
         # ALWAYS prioritize type sensor (need to see enemies)
         self.type_sensor = self.grow_singleton(1, self.type_sensor, CreatureTypeSensor)
 
-        # Spikes early for defense
+        # Spikes for defense
         self.spikes = self.grow_singleton(6, self.spikes, Spikes)
 
         # Energy sensor for combat decisions
@@ -303,25 +281,22 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         # Optional organs based on phase
         phase = self.get_phase_weight()
 
-        # Poison sensor becomes more important late game
         if phase > 0.3:
             self.poison_sensor = self.grow_singleton(
                 4, self.poison_sensor, PoisonSensor
             )
 
-        # Poison gland for area denial
         if phase > 0.4:
             self.poison_gland = self.grow_singleton(9, self.poison_gland, PoisonGland)
 
-        # Cloaking is expensive - only if we have room
         if self.can_grow_organ() and self.count_organs() <= 7:
             self.cloak = self.grow_singleton(7, self.cloak, Cloaking)
 
-    # ======================================================
+    # ==========================================================================
     #                  ACTION EXECUTION
-    # ======================================================
+    # ==========================================================================
     def execute_actions(self):
-        """Execute actions based on weighted priorities"""
+        """Execute actions based on weighted priorities."""
         combat_weight = self.get_param(13)
         repro_weight = self.get_param(14)
         poison_weight = self.get_param(15)
@@ -335,7 +310,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             (cloak_weight, self.act_cloak),
         ]
 
-        # Sort by weight
+        # Sort by weight (highest first)
         actions.sort(key=lambda x: x[0], reverse=True)
 
         # Execute all actions with weight > 0.05
@@ -343,15 +318,15 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             if weight > 0.05:
                 action()
 
-    # ======================================================
+    # ==========================================================================
     #                  COMBAT / MOVEMENT
-    # ======================================================
+    # ==========================================================================
     def get_available_cilia(self):
-        """Get cilia that haven't been used this turn"""
+        """Get cilia that haven't been used this turn."""
         return [c for c in self.cilia_list if c.f_uses_this_turn() == 0]
 
     def act_combat(self):
-        """Main combat/movement action"""
+        """Main combat/movement action."""
         available = self.get_available_cilia()
         if not available:
             return
@@ -363,9 +338,9 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         min_ratio = self.get_param(23)
         min_strength = self.get_param(24)
 
-        # Determine number of moves to make
+        # Determine number of moves to make (2-6 based on phase)
         phase = self.get_phase_weight()
-        max_moves = min(len(available), int(2 + phase * 4))  # 2-6 moves based on phase
+        max_moves = min(len(available), int(2 + phase * 4))
 
         for _ in range(max_moves):
             available = self.get_available_cilia()
@@ -399,7 +374,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         min_ratio,
         min_strength,
     ):
-        """Evaluate all 8 directions and return best one"""
+        """Evaluate all 8 directions and return best one."""
         if self.type_sensor is None:
             return None, 0
 
@@ -411,20 +386,19 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             cell = self.type_sensor.sense(direction)
 
             # Enemy targeting
-            if cell not in (Soil, Plant, DNA_CMA_ES_BUG_INFERENCE, None):
+            if cell not in (Soil, Plant, DNA_CMA_ES_BUG_INFERENCE2, None):
                 enemy_strength = 0
                 if self.energy_sensor:
                     enemy_strength = self.energy_sensor.sense(direction)
 
-                strength_ratio = self.strength() / max(enemy_strength, 1)
+                my_strength = self.strength()
+                strength_ratio = my_strength / max(enemy_strength, 1)
 
-                if strength_ratio >= min_ratio and self.strength() >= min_strength:
-                    # We can take this enemy
+                if strength_ratio >= min_ratio and my_strength >= min_strength:
                     score += enemy_attraction * 100
                     if strength_ratio >= 2.0:
                         score += 150  # Easy kill bonus
                 else:
-                    # Avoid stronger enemies
                     score -= 150
 
             # Plant attraction (food)
@@ -435,11 +409,10 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             if self.poison_sensor and self.poison_sensor.sense(direction):
                 score += poison_avoidance * 30
 
-            # Energy bonus for targets
-            if self.energy_sensor:
+            # Energy bonus for plant targets
+            if self.energy_sensor and cell is Plant:
                 energy = self.energy_sensor.sense(direction)
-                if cell is Plant:
-                    score += energy * 0.01
+                score += energy * 0.01
 
             if score > best_score:
                 best_score = score
@@ -447,11 +420,11 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
 
         return best_dir, best_score
 
-    # ======================================================
+    # ==========================================================================
     #                  REPRODUCTION
-    # ======================================================
+    # ==========================================================================
     def act_reproduce(self):
-        """Attempt to reproduce"""
+        """Attempt to reproduce."""
         if self.womb is None:
             return
 
@@ -467,13 +440,13 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         if random.random() > repro_prob:
             return
 
-        # Population check - don't overcrowd
+        # Population check
         pop = self.instance_count()
         pop_scale = self.get_param(30)
         if pop > 10 and self.strength() < min_strength * (1 + pop * pop_scale * 0.01):
             return
 
-        # Find empty direction
+        # Find direction for birth
         birth_dir = Direction.random()
         if self.type_sensor:
             for d in Direction:
@@ -492,11 +465,11 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         if after > before:
             self.offspring_count += 1
 
-    # ======================================================
+    # ==========================================================================
     #                  POISON
-    # ======================================================
+    # ==========================================================================
     def act_poison(self):
-        """Use poison gland if appropriate"""
+        """Use poison gland if appropriate."""
         if self.poison_gland is None or self.type_sensor is None:
             return
 
@@ -506,17 +479,16 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         # Look for adjacent enemies
         for d in Direction:
             cell = self.type_sensor.sense(d)
-            if cell not in (Soil, Plant, None, DNA_CMA_ES_BUG_INFERENCE):
-                # Enemy adjacent - drop poison
+            if cell not in (Soil, Plant, None, DNA_CMA_ES_BUG_INFERENCE2):
                 if random.random() < 0.5:
                     self.poison_gland.drop_poison(d, 25)
                 return
 
-    # ======================================================
+    # ==========================================================================
     #                  CLOAK
-    # ======================================================
+    # ==========================================================================
     def act_cloak(self):
-        """Manage cloaking based on strength"""
+        """Manage cloaking based on strength."""
         if self.cloak is None:
             return
 
@@ -529,11 +501,13 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             self.cloak.uncloak()
 
 
-# ======================================================
+# ==========================================================================
 #     Propagator - passes DNA to children
-# ======================================================
+# ==========================================================================
 class InferencePropagator(Propagator):
-    __slots__ = ()
+    """Propagator that creates children with same DNA."""
 
     def make_child(self):
-        return DNA_CMA_ES_BUG_INFERENCE(np.copy(self.host().dna))  # type: ignore
+        # Copy DNA as plain list
+        parent_dna = list(self.host().dna)
+        return DNA_CMA_ES_BUG_INFERENCE2(parent_dna)

@@ -13,7 +13,6 @@ import random
 from typing import override
 
 import numpy as np
-
 from shared import (
     Cilia,
     Cloaking,
@@ -43,7 +42,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
     __instance_count = 0
 
     # Load from the training file
-    TOP_FILE = "dna_top10.npy"
+    TOP_FILE = "dna4_top10.npy"
     colour = "#4444dd"  # Blue to distinguish from training red
 
     # Phase transition turn (based on bug age)

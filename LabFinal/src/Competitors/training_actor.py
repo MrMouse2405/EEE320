@@ -1,11 +1,13 @@
 """
-DNA_CMA_ES_BUG_INFERENCE - Phase-Based Adaptive Strategy (Inference Only)
+DNA_CMA_ES_BUG_RED - Phase-Based Adaptive Strategy
 
-This is the deployment version of the trained bug:
-- Loads best DNA from training file
-- No reward scoring (pure behavior)
-- Phase-based strategy (early/mid/late game)
-- Proper cilia management
+Key improvements:
+1. Phase-based DNA parameters (early/mid/late game)
+2. Proper cilia organ management (store references)
+3. Population-aware decision making
+4. Win-focused reward shaping (survival + domination)
+5. Adaptive organ growth priorities
+6. Turn counter for temporal awareness
 """
 
 import os
@@ -32,63 +34,91 @@ from shared import (
 )
 
 
-class DNA_CMA_ES_BUG_INFERENCE(Creature):
-    """
-    Inference-only version of the phase-based trained bug.
-    Loads best DNA from training and uses it without any reward scoring.
-
-    Phase tracking uses individual bug's age - no framework modification needed.
-    """
-
+class DNA_CMA_ES_BUG_RED(Creature):
     __instance_count = 0
 
-    # Load from the training file
     TOP_FILE = "dna_top10.npy"
-    colour = "#4444dd"  # Blue to distinguish from training red
+    reward_score = 0
+    colour = "#dd4444"
 
-    # Phase transition turn (based on bug age)
-    PHASE_TRANSITION = 500
+    # ======================================================
+    #                 REWARD CONSTANTS
+    # ======================================================
+    # WINNING IS EVERYTHING - heavily skewed toward outcomes
+    R_WIN = +500000  # Massive reward for winning
+    R_LOSS = -200000  # Heavy penalty for losing
+    R_TIMEOUT_WIN = +100000  # Good reward for dominating at timeout
+    R_TIMEOUT_LOSE = -100000  # Heavy penalty for losing at timeout
+    R_TIMEOUT_DRAW = -50000  # Draws are bad - should be winning
 
-    # Default DNA - Phase-based (64 values)
-    # Fallback if no trained weights exist
+    # Combat - moderate rewards
+    R_KILL = +1000  # Good kill reward
+    R_DEATH = -500  # Death penalty
+    R_DAMAGE_DEALT = +1.0
+    R_DAMAGE_TAKEN = -0.5
+
+    # Reproduction - encourage sustainable growth
+    R_SUCCESS_REPRO = +100
+    R_USELESS_REPRO = -50
+
+    # Population dominance bonus (per turn)
+    R_POP_ADVANTAGE = +5  # Per bug advantage
+
+    # Survival bonus (scales with time)
+    R_SURVIVE = +0.1
+
+    # ======================================================
+    #         DNA CONFIG - PHASE-BASED (64 values)
+    # ======================================================
+    # DNA is split into phases:
+    # [0-31]  = EARLY game (turns 0-500)
+    # [32-63] = LATE game (turns 500+)
+    # Linear interpolation between phases
+
     DEFAULT_DNA = np.array(
         [
             # ========== EARLY GAME (indices 0-31) ==========
             # ORGAN THRESHOLDS - minimum strength after creation
-            200,  # [0] Cilia threshold
-            100,  # [1] Type sensor threshold
+            # Lower values = more aggressive growth
+            200,  # [0] Cilia threshold - grow movement early
+            100,  # [1] Type sensor threshold - MUST SEE
             300,  # [2] Energy sensor threshold
-            800,  # [3] Life sensor threshold
-            600,  # [4] Poison sensor threshold
+            800,  # [3] Life sensor threshold (skip early)
+            600,  # [4] Poison sensor threshold (skip early)
             350,  # [5] PhotoGland threshold
-            250,  # [6] Spikes threshold
-            1200,  # [7] Cloaking threshold
-            300,  # [8] Womb threshold
-            1000,  # [9] Poison gland threshold
-            4,  # [10] Target cilia count
+            250,  # [6] Spikes threshold - defense matters
+            1200,  # [7] Cloaking threshold (skip early)
+            300,  # [8] Womb threshold - reproduce early
+            1000,  # [9] Poison gland threshold (skip early)
+            # ORGAN QUANTITIES (10-12)
+            4,  # [10] Target cilia count - MOVE FAST
             2,  # [11] Target photogland count
             0,  # [12] Reserved
-            0.85,  # [13] Combat weight
-            0.5,  # [14] Reproduction weight
-            0.05,  # [15] Poison weight
-            0.05,  # [16] Cloak weight
+            # ACTION WEIGHTS (13-17)
+            0.85,  # [13] Combat weight - HIGH
+            0.5,  # [14] Reproduction weight - populate
+            0.05,  # [15] Poison weight - skip
+            0.05,  # [16] Cloak weight - skip
             0.2,  # [17] Foraging weight
-            3.0,  # [18] Enemy attraction
-            2.5,  # [19] Plant attraction
+            # MOVEMENT PARAMS (18-22)
+            3.0,  # [18] Enemy attraction - HUNT!
+            2.5,  # [19] Plant attraction - eat plants
             -2.0,  # [20] Poison avoidance
             0.02,  # [21] Energy attraction
-            0.9,  # [22] Move probability
-            0.7,  # [23] Min strength ratio
+            0.9,  # [22] Move probability - ALWAYS MOVE
+            # COMBAT PARAMS (23-26)
+            0.7,  # [23] Min strength ratio - be bold
             500,  # [24] Min absolute strength
             0.2,  # [25] Cloak threshold
             1.4,  # [26] Aggressive pursuit ratio
+            # REPRODUCTION PARAMS (27-31)
             800,  # [27] Min strength to reproduce
-            0.35,  # [28] Energy fraction
-            5,  # [29] Max offspring
+            0.35,  # [28] Energy fraction to offspring
+            5,  # [29] Max offspring per bug
             0.35,  # [30] Population scaling
             0.5,  # [31] Reproduction probability
             # ========== LATE GAME (indices 32-63) ==========
-            150,  # [32] Cilia threshold
+            150,  # [32] Cilia threshold - very aggressive
             50,  # [33] Type sensor threshold
             200,  # [34] Energy sensor threshold
             500,  # [35] Life sensor threshold
@@ -98,25 +128,30 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             500,  # [39] Cloaking threshold
             250,  # [40] Womb threshold
             600,  # [41] Poison gland threshold
-            6,  # [42] Target cilia count
+            # ORGAN QUANTITIES (42-44)
+            6,  # [42] Target cilia count - MAX HUNTING
             2,  # [43] Target photogland count
             0,  # [44] Reserved
-            0.95,  # [45] Combat weight
+            # ACTION WEIGHTS (45-49)
+            0.95,  # [45] Combat weight - MAXIMUM
             0.2,  # [46] Reproduction weight
             0.15,  # [47] Poison weight
             0.1,  # [48] Cloak weight
             0.1,  # [49] Foraging weight
-            4.0,  # [50] Enemy attraction
+            # MOVEMENT PARAMS (50-54)
+            4.0,  # [50] Enemy attraction - MAXIMUM
             1.0,  # [51] Plant attraction
             -1.5,  # [52] Poison avoidance
             0.01,  # [53] Energy attraction
             0.95,  # [54] Move probability
-            0.5,  # [55] Min strength ratio
+            # COMBAT PARAMS (55-58)
+            0.5,  # [55] Min strength ratio - very aggressive
             350,  # [56] Min absolute strength
             0.15,  # [57] Cloak threshold
             1.2,  # [58] Aggressive pursuit ratio
+            # REPRODUCTION PARAMS (59-63)
             1000,  # [59] Min strength to reproduce
-            0.3,  # [60] Energy fraction
+            0.3,  # [60] Energy fraction to offspring
             3,  # [61] Max offspring
             0.5,  # [62] Population scaling
             0.25,  # [63] Reproduction probability
@@ -124,15 +159,13 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         dtype=float,
     )
 
+    # Phase transition turn
+    PHASE_TRANSITION = 500
+
     def __init__(self, dna=None):
         super().__init__()
-        DNA_CMA_ES_BUG_INFERENCE.__instance_count += 1
-
-        # Use provided DNA or load best from file
-        if dna is not None:
-            self.dna = np.copy(dna)
-        else:
-            self.dna = self.load_best_dna()
+        DNA_CMA_ES_BUG_RED.__instance_count += 1
+        self.dna = np.copy(dna) if dna is not None else np.copy(self.DEFAULT_DNA)
 
         # Organs - store actual references for cilia
         self.cilia_list = []  # List of actual Cilia objects
@@ -148,6 +181,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
 
         # State tracking
         self.offspring_count = 0
+        self.kills = 0
         self.age = 0
 
     # ======================================================
@@ -155,32 +189,11 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
     # ======================================================
     @classmethod
     def instance_count(cls):
-        return DNA_CMA_ES_BUG_INFERENCE.__instance_count
+        return DNA_CMA_ES_BUG_RED.__instance_count
 
     @classmethod
     def destroyed(cls):
-        DNA_CMA_ES_BUG_INFERENCE.__instance_count -= 1
-
-    # ======================================================
-    #              LOAD BEST DNA
-    # ======================================================
-    @classmethod
-    def load_best_dna(cls):
-        """Load the best DNA from training file."""
-        if os.path.exists(cls.TOP_FILE):
-            try:
-                top_dna_list = list(np.load(cls.TOP_FILE, allow_pickle=True))
-                if len(top_dna_list) > 0:
-                    # Get the best DNA (highest reward)
-                    best_entry = top_dna_list[0]
-                    best_dna = best_entry[1]
-                    print(f"[INFERENCE] Loaded best DNA with reward: {best_entry[0]}")
-                    return np.copy(best_dna)
-            except Exception as e:
-                print(f"[INFERENCE] Failed to load DNA: {e}")
-
-        print("[INFERENCE] No trained DNA found, using default")
-        return np.copy(cls.DEFAULT_DNA)
+        DNA_CMA_ES_BUG_RED.__instance_count -= 1
 
     # ======================================================
     #              PHASE-BASED DNA ACCESS
@@ -189,10 +202,9 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         """Returns interpolation weight: 0 = early game, 1 = late game
 
         Uses individual bug's age as proxy for game phase.
-        This works because all bugs age together each turn.
+        This works because bugs that survive longer are in later game phases.
+        New babies start at phase 0 and adapt as they age.
         """
-        # Use this bug's age as the phase indicator
-        # Older bugs = later in game
         turn = self.age
         if turn <= 0:
             return 0.0
@@ -212,11 +224,81 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         return early_val + phase * (late_val - early_val)
 
     # ======================================================
+    #              REWARD METHODS
+    # ======================================================
+    @classmethod
+    def reward_win(cls):
+        cls.reward_score += cls.R_WIN
+
+    @classmethod
+    def reward_loss(cls):
+        cls.reward_score += cls.R_LOSS
+
+    @classmethod
+    def reward_timeout(cls, my_count, opp_count):
+        """Called when match times out - reward based on population"""
+        if my_count > opp_count:
+            # Winning at timeout - good but not as good as real win
+            advantage = my_count - opp_count
+            cls.reward_score += cls.R_TIMEOUT_WIN + (advantage * 1000)
+        elif my_count < opp_count:
+            # Losing at timeout - bad
+            disadvantage = opp_count - my_count
+            cls.reward_score += cls.R_TIMEOUT_LOSE - (disadvantage * 1000)
+        else:
+            # Draw - not good, should be winning
+            cls.reward_score += cls.R_TIMEOUT_DRAW
+
+    # ======================================================
+    #                     DEATH
+    # ======================================================
+    @override
+    def f_die(self):
+        DNA_CMA_ES_BUG_RED.reward_score += DNA_CMA_ES_BUG_RED.R_DEATH
+        super().f_die()
+
+    # ======================================================
+    #                     COMBAT
+    # ======================================================
+    @override
+    def f_attack(self, defender):
+        my_before = self.strength()
+        def_before = defender.strength()
+
+        result = super().f_attack(defender)
+
+        my_after = self.strength()
+        def_after = defender.strength()
+
+        # Damage tracking
+        dmg_to_enemy = max(0, def_before - def_after)
+        dmg_to_me = max(0, my_before - my_after)
+
+        DNA_CMA_ES_BUG_RED.reward_score += dmg_to_enemy * self.R_DAMAGE_DEALT
+        DNA_CMA_ES_BUG_RED.reward_score += dmg_to_me * self.R_DAMAGE_TAKEN
+
+        # Kill bonus - only for killing actual enemies (not plants/soil)
+        if result is self and def_before > 0:
+            if type(defender) not in (Soil, Plant, DNA_CMA_ES_BUG_RED):
+                DNA_CMA_ES_BUG_RED.reward_score += self.R_KILL
+                self.kills += 1
+
+        return result
+
+    # ======================================================
     #                       TURN
     # ======================================================
     def do_turn(self):
-        """Execute turn without any reward scoring."""
         self.age += 1
+
+        # Survival reward (scales with game progress)
+        phase = self.get_phase_weight()
+        DNA_CMA_ES_BUG_RED.reward_score += self.R_SURVIVE * (1 + phase)
+
+        # Population advantage bonus
+        my_pop = self.instance_count()
+        # Estimate enemy population (total creatures - my bugs - plants/soil estimate)
+        # This is approximate but helps guide behavior
 
         # Grow organs based on phase
         self.grow_organs_adaptive()
@@ -252,41 +334,59 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         return self.count_organs() < Creature.MAX_ORGANS
 
     def grow_singleton(self, threshold_early, organ_ref, organ_class):
-        """Grow a singleton organ if conditions met"""
+        """Grow a singleton organ if conditions met
+
+        threshold = minimum strength we want to have AFTER creating the organ
+        So we need: current_strength - creation_cost >= threshold
+        """
         if organ_ref is not None:
             return organ_ref
 
         threshold = self.get_param(threshold_early)
         creation_cost = organ_class.CREATION_COST
 
+        # Only grow if we'll have enough strength left after creation
         if self.strength() - creation_cost >= threshold and self.can_grow_organ():
             return organ_class(self)
         return None
 
     def grow_organs_adaptive(self):
-        """Grow organs based on game phase and current state"""
+        """Grow organs based on game phase and current state
 
-        # ALWAYS prioritize type sensor (need to see enemies)
+        Priority order designed for survival:
+        1. Type sensor (need to see)
+        2. One cilia (need to move)
+        3. PhotoGlands (need energy to survive)
+        4. More cilia (mobility)
+        5. Spikes (defense)
+        6. Womb (reproduction)
+        7. Other sensors/organs as energy allows
+        """
+        from shared import (
+            Cilia,
+            Cloaking,
+            CreatureTypeSensor,
+            EnergySensor,
+            PhotoGland,
+            PoisonGland,
+            PoisonSensor,
+            Spikes,
+        )
+
+        # PRIORITY 1: Type sensor - absolute must-have
         self.type_sensor = self.grow_singleton(1, self.type_sensor, CreatureTypeSensor)
 
-        # Spikes early for defense
-        self.spikes = self.grow_singleton(6, self.spikes, Spikes)
-
-        # Energy sensor for combat decisions
-        self.energy_sensor = self.grow_singleton(2, self.energy_sensor, EnergySensor)
-
-        # Cilia for movement (multiple)
-        target_cilia = int(self.get_param(10))
+        # PRIORITY 2: At least one cilia for movement
         cilia_threshold = self.get_param(0)
-        while (
-            len(self.cilia_list) < target_cilia
+        if (
+            len(self.cilia_list) == 0
             and self.strength() - Cilia.CREATION_COST >= cilia_threshold
             and self.can_grow_organ()
         ):
-            new_cilia = Cilia(self)
-            self.cilia_list.append(new_cilia)
+            self.cilia_list.append(Cilia(self))
 
-        # PhotoGlands for energy (multiple)
+        # PRIORITY 3: PhotoGlands for energy sustainability
+        # PhotoGlands have negative maintenance (-150) so they're critical!
         target_photo = int(self.get_param(11))
         photo_threshold = self.get_param(5)
         while (
@@ -297,24 +397,37 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             PhotoGland(self)
             self.photoglands += 1
 
-        # Womb for reproduction
-        self.womb = self.grow_singleton(8, self.womb, InferencePropagator)
+        # PRIORITY 4: More cilia for mobility
+        target_cilia = int(self.get_param(10))
+        while (
+            len(self.cilia_list) < target_cilia
+            and self.strength() - Cilia.CREATION_COST >= cilia_threshold
+            and self.can_grow_organ()
+        ):
+            self.cilia_list.append(Cilia(self))
 
-        # Optional organs based on phase
+        # PRIORITY 5: Spikes for defense
+        self.spikes = self.grow_singleton(6, self.spikes, Spikes)
+
+        # PRIORITY 6: Energy sensor for smart targeting
+        self.energy_sensor = self.grow_singleton(2, self.energy_sensor, EnergySensor)
+
+        # PRIORITY 7: Womb for reproduction
+        self.womb = self.grow_singleton(8, self.womb, RLPropagator)
+
+        # Late game organs (only if phase allows)
         phase = self.get_phase_weight()
 
-        # Poison sensor becomes more important late game
         if phase > 0.3:
             self.poison_sensor = self.grow_singleton(
                 4, self.poison_sensor, PoisonSensor
             )
 
-        # Poison gland for area denial
-        if phase > 0.4:
+        if phase > 0.5:
             self.poison_gland = self.grow_singleton(9, self.poison_gland, PoisonGland)
 
-        # Cloaking is expensive - only if we have room
-        if self.can_grow_organ() and self.count_organs() <= 7:
+        # Cloaking is very expensive - only if lots of room
+        if self.can_grow_organ() and self.count_organs() <= 6:
             self.cloak = self.grow_singleton(7, self.cloak, Cloaking)
 
     # ======================================================
@@ -403,6 +516,13 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         if self.type_sensor is None:
             return None, 0
 
+        # Safety check - need to be in a world
+        try:
+            if self.f_world() is None:
+                return None, 0
+        except:
+            return None, 0
+
         best_score = -9999
         best_dir = None
 
@@ -411,7 +531,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
             cell = self.type_sensor.sense(direction)
 
             # Enemy targeting
-            if cell not in (Soil, Plant, DNA_CMA_ES_BUG_INFERENCE, None):
+            if cell not in (Soil, Plant, DNA_CMA_ES_BUG_RED, None):
                 enemy_strength = 0
                 if self.energy_sensor:
                     enemy_strength = self.energy_sensor.sense(direction)
@@ -491,6 +611,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
 
         if after > before:
             self.offspring_count += 1
+            DNA_CMA_ES_BUG_RED.reward_score += self.R_SUCCESS_REPRO
 
     # ======================================================
     #                  POISON
@@ -506,7 +627,7 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         # Look for adjacent enemies
         for d in Direction:
             cell = self.type_sensor.sense(d)
-            if cell not in (Soil, Plant, None, DNA_CMA_ES_BUG_INFERENCE):
+            if cell not in (Soil, Plant, None, DNA_CMA_ES_BUG_RED):
                 # Enemy adjacent - drop poison
                 if random.random() < 0.5:
                     self.poison_gland.drop_poison(d, 25)
@@ -528,12 +649,42 @@ class DNA_CMA_ES_BUG_INFERENCE(Creature):
         else:
             self.cloak.uncloak()
 
+    # ======================================================
+    #           TOP DNA MANAGEMENT FOR CMA-ES
+    # ======================================================
+    TOP_K = 10
+    top_dna = []
+
+    @classmethod
+    def load_top_list(cls):
+        if os.path.exists(cls.TOP_FILE):
+            try:
+                cls.top_dna = list(np.load(cls.TOP_FILE, allow_pickle=True))
+            except:
+                cls.top_dna = []
+        else:
+            cls.top_dna = []
+
+    @classmethod
+    def export_top_list(cls):
+        entry = (cls.reward_score, np.copy(cls.DEFAULT_DNA))
+        cls.top_dna.append(entry)
+        cls.top_dna = sorted(cls.top_dna, key=lambda x: x[0], reverse=True)[: cls.TOP_K]
+        np.save(cls.TOP_FILE, np.array(cls.top_dna, dtype=object))
+        cls.reward_score = 0
+
+    @classmethod
+    def choose_initial_dna(cls):
+        if cls.top_dna:
+            return np.copy(cls.top_dna[0][1])
+        return np.copy(cls.DEFAULT_DNA)
+
 
 # ======================================================
 #     Propagator - passes DNA to children
 # ======================================================
-class InferencePropagator(Propagator):
+class RLPropagator(Propagator):
     __slots__ = ()
 
     def make_child(self):
-        return DNA_CMA_ES_BUG_INFERENCE(np.copy(self.host().dna))  # type: ignore
+        return DNA_CMA_ES_BUG_RED(np.copy(self.host().dna))  # type: ignore
